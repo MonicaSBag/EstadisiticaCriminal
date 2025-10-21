@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ABM Provincias SNIC</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    select, button {
+      padding: 5px;
+      margin: 5px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Filtro de Provincias SNIC</h1>
+
+  <div>
+    <label>Provincia:</label>
+    <select id="provincia"></select>
+
+    <label>Tipo de delito:</label>
+    <select id="tipo_delito"></select>
+
+    <label>Género:</label>
+    <select id="genero"></select>
+
+    <button onclick="aplicarFiltros()">Filtrar</button>
+  </div>
+
+  <h2>Total de registros: <span id="total">0</span></h2>
+
+  <table id="tabla">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function cargarFiltros() {
+      const res = await fetch('/filtros');
+      const data = await res.json();
+
+      const selProvincia = document.getElementById('provincia');
+      const selDelito = document.getElementById('tipo_delito');
+      const selGenero = document.getElementById('genero');
+
+      const llenarSelect = (select, valores) => {
+        select.innerHTML = '<option value="">Todos</option>';
+        valores.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v;
+          select.appendChild(opt);
+        });
+      };
+
+      llenarSelect(selProvincia, data.provincias);
+      llenarSelect(selDelito, data.tipos_delito);
+      llenarSelect(selGenero, data.generos);
+    }
+
+    async function aplicarFiltros() {
+      const filtros = {
+        provincia: document.getElementById('provincia').value,
+        tipo_delito: document.getElementById('tipo_delito').value,
+        genero: document.getElementById('genero').value
+      };
+
+      const res = await fetch('/filtrar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(filtros)
+      });
+      const data = await res.json();
+
+      document.getElementById('total').textContent = data.total;
+
+      const tabla = document.getElementById('tabla');
+      const thead = tabla.querySelector('thead');
+      const tbody = tabla.querySelector('tbody');
+      tbody.innerHTML = '';
+      thead.innerHTML = '';
+
+      if (data.datos.length > 0) {
+        const cols = Object.keys(data.datos[0]);
+        thead.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+        data.datos.forEach(fila => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = cols.map(c => `<td>${fila[c]}</td>`).join('');
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    window.onload = cargarFiltros;
+  </script>
+</body>
+</html>
