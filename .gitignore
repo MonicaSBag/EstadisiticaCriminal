@@ -258,3 +258,6 @@ media/
 logs/
 __MACOSX/
 .cache/
+*.sqlite3
+*.db
+*.sql
