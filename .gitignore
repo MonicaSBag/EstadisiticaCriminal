@@ -205,3 +205,56 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+# ============================
+# 🌐 FRONTEND / JAVASCRIPT (si aplica)
+# ============================
+main/node_modules/
+main/dist/
+main/build/
+main/.next/
+main/.parcel-cache/
+main/.vite/
+main/.yarn/
+main/coverage/
+main/package-lock.json
+main/yarn.lock
+
+# ============================
+# ⚙️ CONFIGURACIONES Y ARCHIVOS COMUNES
+# ============================
+*.log
+*.tmp
+*.bak
+*.old
+*.orig
+*.swp
+*.swo
+
+# ============================
+# 🧠 EDITORES E IDEs
+# ============================
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# ============================
+# 🔒 CREDENCIALES Y CONFIGURACIONES SENSIBLES
+# ============================
+*.env
+main/.env
+secrets.json
+*.key
+*.pem
+*.crt
+
+# ============================
+# 🧰 TEMPORALES Y DATOS LOCALES
+# ============================
+tmp/
+temp/
+uploads/
+media/
+logs/
+__MACOSX/
+.cache/
