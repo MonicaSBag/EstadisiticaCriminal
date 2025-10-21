@@ -1,0 +1,6 @@
+abm_provincias/
+│
+├── app.py                ← Backend Flask (Python)
+├── snic-provincias.xlsx  ← Tu archivo Excel
+└── templates/
+    └── index.html        ← Frontend (HTML + JavaScript)
