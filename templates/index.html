@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>ABM Provincias SNIC</title>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -34,14 +36,14 @@
     <label>Provincia:</label>
     <select id="provincia"></select>
 
-    <label>Tipo de delito:</label>
-    <select id="tipo_delito"></select>
+    <label>Año: </label>
+    <select id="anio"></select>
 
 
     <button onclick="aplicarFiltros()">Filtrar</button>
   </div>
 
-  <h2>Total de registros: <span id="total">0</span></h2>
+  <h2>Total: <span id="total">0</span></h2>
 
   <table id="tabla">
     <thead></thead>
@@ -54,7 +56,7 @@
       const data = await res.json();
 
       const selProvincia = document.getElementById('provincia');
-      const selDelito = document.getElementById('tipo_delito');
+      const selAnio = document.getElementById('anio');
 
       const llenarSelect = (select, valores) => {
         select.innerHTML = '<option value="">Todos</option>';
@@ -67,17 +69,17 @@
       };
 
       llenarSelect(selProvincia, data.provincias);
-      llenarSelect(selDelito, data.tipos_delito);
-      llenarSelect(selGenero, data.generos);
+      llenarSelect(selAnio, data.anio);
     }
 
     async function aplicarFiltros() {
       const filtros = {
         provincia: document.getElementById('provincia').value,
-        tipo_delito: document.getElementById('tipo_delito').value,
+        anio: document.getElementById('anio').value,
       };
 
-      const res = await fetch('http://127.0.0.1:5000/filtros', {
+      const res = await fetch('http://127.0.0.1:5000/filtrar', {
+        method:"POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(filtros)
       });
@@ -100,9 +102,37 @@
           tbody.appendChild(tr);
         });
       }
+      drawChart(filtros);
     }
-
     window.onload = cargarFiltros;
+    google.charts.load('current', { packages: ['corechart'] });
+    google.charts.setOnLoadCallback(() => drawChart());
+    //CHART1
+    async function drawChart(filtros = {}) {
+      const res = await fetch('/estadisticas', {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(filtros)
+      });
+      const data = await res.json();
+
+      const chartData = [['Tipo de delito', 'Cantidad']];
+      data.forEach(obj => {
+        chartData.push([obj.codigo_delito_snic_nombre, obj['COUNT(*)']]);
+      });
+
+      const dataTable = google.visualization.arrayToDataTable(chartData);
+      const options = {
+        title: 'Delitos por tipo',
+        width: 800,
+        height: 500
+      };
+
+      const chart = new google.visualization.ColumnChart(document.getElementById('grafico'));
+      chart.draw(dataTable, options);
+    }
   </script>
+<h2>Gráfico de delitos por provincia</h2>
+<div id="grafico" style="width: 1000PX; height: 400px;"></div>
 </body>
 </html>
