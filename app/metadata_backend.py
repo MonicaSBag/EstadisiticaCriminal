@@ -1,11 +1,14 @@
 import sqlite3
 from flask import Flask, jsonify, render_template, request
-
+from setup_database import crear_db, crear_tabla, cargar_archivo
 app = Flask(__name__, template_folder="../templates")
 
 # CONEXION A LA BBDD
-def obtener_conexion():
-    return sqlite3.connect('data/estadistica_criminal.db')
+#def obtener_conexion():
+#    return sqlite3.connect('data/estadistica_criminal.db')
+crear_db()
+crear_tabla()
+cargar_archivo()
 
 # RENDER LA PAGINA PRINCIPAL
 @app.route('/')
