@@ -1,0 +1,15 @@
+services:
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase_estadistica
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/metabase-data
+    networks:
+      - app_network
+    restart: always
+
+networks:
+  app_network:
+    driver: bridge

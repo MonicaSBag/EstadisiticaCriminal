@@ -3,7 +3,7 @@ from peewee import *
 #MODELO ORM
 #se crea la base de datos o lee si ya existe
 sqlite_db = SqliteDatabase('../database/estadistica_criminal.db')
-
+#b47fe25d952c1df94b8270651d426d976deafa494098fb3f8e96ee54461d5c30
 # ESTRUCTURA DE LA BASE DE DATOS
 class BaseModel(Model):
     class Meta:
