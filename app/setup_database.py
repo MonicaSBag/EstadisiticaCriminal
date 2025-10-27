@@ -28,6 +28,7 @@ class BaseModel(Model):
 # Crear tabla si no existe
 sqlite_db.connect()
 sqlite_db.create_tables([BaseModel])
+
 print("Tabla creada o ya existente.")
 
 # Se lee el archivo xlsx y se carga los datos

@@ -37,8 +37,6 @@
     <label>Tipo de delito:</label>
     <select id="tipo_delito"></select>
 
-    <label>Género:</label>
-    <select id="genero"></select>
 
     <button onclick="aplicarFiltros()">Filtrar</button>
   </div>
@@ -52,12 +50,11 @@
 
   <script>
     async function cargarFiltros() {
-      const res = await fetch('/filtros');
+      const res = await fetch('http://127.0.0.1:5000/filtros');
       const data = await res.json();
 
       const selProvincia = document.getElementById('provincia');
       const selDelito = document.getElementById('tipo_delito');
-      const selGenero = document.getElementById('genero');
 
       const llenarSelect = (select, valores) => {
         select.innerHTML = '<option value="">Todos</option>';
@@ -78,11 +75,9 @@
       const filtros = {
         provincia: document.getElementById('provincia').value,
         tipo_delito: document.getElementById('tipo_delito').value,
-        genero: document.getElementById('genero').value
       };
 
-      const res = await fetch('/filtrar', {
-        method: 'POST',
+      const res = await fetch('http://127.0.0.1:5000/filtros', {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(filtros)
       });

@@ -1,15 +1,31 @@
-from flask import Flask, render_template
-import jwt, time
+import sqlite3
+from flask import Flask, jsonify, render_template
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="../templates")
 
-@app.route("/")
-def reporte():
-    payload = {
-        "resource": {"question": 38},
-        "params": {},
-        "exp": round(time.time()) + (60 * 10)
-    }
-    token = jwt.encode(payload, "tu_clave_secreta", algorithm="HS256")
-    iframe_url = f"http://localhost:3000/embed/question/{token}#bordered=true&titled=true"
-    return render_template("../templates/reporte.html", iframe_url=iframe_url)
+def obtener_conexion():
+    return sqlite3.connect('data/estadistica_criminal.db')
+
+@app.route('/')
+def index():
+    return render_template("index.html")
+
+@app.route('/filtros', methods=["GET"])
+def filtros():
+    conn = obtener_conexion()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT DISTINCT provincia_nombre FROM estadisticas_delitos")
+    provincias = [fila[0] for fila in cursor.fetchall()]
+
+    cursor.execute("SELECT DISTINCT codigo_delito_snic_nombre FROM estadisticas_delitos")
+    tipos_delito = [fila[0] for fila in cursor.fetchall()]
+
+
+    conn.close()
+
+    return jsonify({
+        "provincias": provincias,
+        "tipos_delito": tipos_delito,
+    })
+
