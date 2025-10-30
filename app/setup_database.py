@@ -6,7 +6,7 @@ sqlite_db = SqliteDatabase('data/estadistica_criminal.db')
 
 # Se crea la base de datos o lee si ya existe
 def crear_db():
-    """Crea el directorio data/ si no existe y conecta a la base de datos"""
+    #Crea el directorio data/ si no existe y conecta a la base de datos
     os.makedirs('data', exist_ok=True)
     sqlite_db.connect(reuse_if_open=True)
     print("Base de datos conectada.")
@@ -52,7 +52,7 @@ class BaseModel(Model):
                 return
             
             # Verificar que el archivo existe
-            archivo = "snic-provincias.xlsx"
+            archivo = "../snic-provincias.xlsx"
             if not os.path.exists(archivo):
                 print(f"Advertencia: No se encontró el archivo '{archivo}'")
                 return
