@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ABM Provincias SNIC</title>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    select, button {
+      padding: 5px;
+      margin: 5px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Filtro de Provincias SNIC</h1>
+
+  <div>
+    <label>Provincia:</label>
+    <select id="provincia"></select>
+
+    <label>Año: </label>
+    <select id="anio"></select>
+
+    <label>Tipo Delito: </label>
+    <select id="codigo_delito_snic_nombre"></select>
+
+    <button onclick="aplicarFiltros()">Filtrar</button>
+  </div>
+
+  <h2>Total: <span id="total">0</span></h2>
+
+  <table id="tabla">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function cargarFiltros() {
+      const res = await fetch('http://127.0.0.1:5000/filtros');
+      const data = await res.json();
+
+      const selProvincia = document.getElementById('provincia');
+      const selAnio = document.getElementById('anio');
+      const selDelito = document.getElementById('codigo_delito_snic_nombre');
+
+      const llenarSelect = (select, valores) => {
+        select.innerHTML = '<option value="">Todos</option>';
+        valores.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v;
+          select.appendChild(opt);
+        });
+      };
+
+      llenarSelect(selProvincia, data.provincias);
+      llenarSelect(selAnio, data.anio);
+      llenarSelect(selDelito, data.codigo_delito_snic_nombre);
+
+    }
+
+    async function aplicarFiltros() {
+      const filtros = {
+        provincia: document.getElementById('provincia').value,
+        anio: document.getElementById('anio').value,
+        codigo_delito_snic_nombre: document.getElementById('codigo_delito_snic_nombre').value,
+
+      };
+
+      const res = await fetch('http://127.0.0.1:5000/filtrar', {
+        method:"POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(filtros)
+      });
+      const data = await res.json();
+
+      document.getElementById('total').textContent = data.total;
+
+      const tabla = document.getElementById('tabla');
+      const thead = tabla.querySelector('thead');
+      const tbody = tabla.querySelector('tbody');
+      tbody.innerHTML = '';
+      thead.innerHTML = '';
+
+      if (data.datos.length > 0) {
+        const cols = Object.keys(data.datos[0]);
+        thead.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+        data.datos.forEach(fila => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = cols.map(c => `<td>${fila[c]}</td>`).join('');
+          tbody.appendChild(tr);
+        });
+      }
+      drawChart(filtros);
+    }
+    window.onload = cargarFiltros;
+    google.charts.load('current', { packages: ['corechart'] });
+    google.charts.setOnLoadCallback(() => drawChart());
+    //CHART1
+    async function drawChart(filtros = {}) {
+      const res = await fetch('/estadisticas', {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(filtros)
+      });
+      const data = await res.json();
+
+      const chartData = [['Tipo de delito', 'Cantidad']];
+      data.forEach(obj => {
+        chartData.push([obj.codigo_delito_snic_nombre, obj['COUNT(*)']]);
+      });
+
+      const dataTable = google.visualization.arrayToDataTable(chartData);
+      const options = {
+        title: 'Delitos por tipo',
+        width: 800,
+        height: 500
+      };
+
+      const chart = new google.visualization.ColumnChart(document.getElementById('grafico'));
+      chart.draw(dataTable, options);
+    }
+  </script>
+<h2>Gráfico de delitos por provincia</h2>
+<div id="grafico" style="width: 1000PX; height: 400px;"></div>
+</body>
+</html>
