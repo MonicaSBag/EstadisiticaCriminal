@@ -1,14 +1,17 @@
 import sqlite3
 from flask import Flask, jsonify, render_template, request
-from setup_database import crear_db, crear_tabla, cargar_archivo
+from setup_database import crear_db, BaseModel
+
 app = Flask(__name__, template_folder="../templates")
 
-# CONEXION A LA BBDD
-#def obtener_conexion():
-#    return sqlite3.connect('data/estadistica_criminal.db')
+# INICIALIZAR BASE DE DATOS
 crear_db()
-crear_tabla()
-cargar_archivo()
+BaseModel.crear_tabla()
+BaseModel.cargar_archivo()
+
+# CONEXION A LA BBDD
+def obtener_conexion():
+    return sqlite3.connect('data/estadistica_criminal.db')
 
 # RENDER LA PAGINA PRINCIPAL
 @app.route('/')
@@ -20,19 +23,24 @@ def index():
 def filtros():
     conn = obtener_conexion()
     cursor = conn.cursor()
-    # selecciona todas las provincias 
-    cursor.execute("SELECT DISTINCT provincia_nombre FROM estadisticas_delitos")
+    
+    # Selecciona todas las provincias 
+    cursor.execute("SELECT DISTINCT provincia_nombre FROM estadisticas_delitos ORDER BY provincia_nombre")
     provincias = [fila[0] for fila in cursor.fetchall()]
-    # selecciona todos los delitos
-    cursor.execute("SELECT DISTINCT anio FROM estadisticas_delitos")
+    
+    # Selecciona todos los años
+    cursor.execute("SELECT DISTINCT anio FROM estadisticas_delitos ORDER BY anio")
     anio = [fila[0] for fila in cursor.fetchall()]
+    
     conn.close()
-    # devuelve json con los datos para el listado de filtro
+    
+    # Devuelve json con los datos para el listado de filtro
     return jsonify({
         "provincias": provincias,
         "anio": anio,
     })
-#  busca los datos segun el filtro del usuario
+
+# BUSCA LOS DATOS SEGUN EL FILTRO DEL USUARIO
 @app.route('/filtrar', methods=["POST"])
 def filtrar():
     filtros = request.get_json()
@@ -65,39 +73,42 @@ def filtrar():
         "datos": datos
     })
 
-
-# EXTRAE LA DATA DESDE LA BBDD
+# EXTRAE ESTADÍSTICAS AGRUPADAS
 @app.route('/estadisticas', methods=["POST"])
 def estadisticas():
     conn = obtener_conexion()
     cursor = conn.cursor()
-    filtros = request.get_json()
+    
+    filtros = request.get_json() or {}
     provincia = filtros.get('provincia')
     anio = filtros.get('anio')    
-    # selecciona todas las provinicas, cuenta la cant por provincia
+    
+    # Selecciona delitos y cuenta cantidad por tipo
     query = """
-    SELECT codigo_delito_snic_nombre, COUNT(*) 
-    FROM estadisticas_delitos 
-    WHERE 1=1
-"""
+        SELECT codigo_delito_snic_nombre, COUNT(*) as cantidad
+        FROM estadisticas_delitos 
+        WHERE 1=1
+    """
     params = []
+    
     if provincia:
         query += " AND provincia_nombre = ?"
         params.append(provincia)
     if anio:
         query += " AND anio = ?"
         params.append(anio)
-    query += " GROUP BY codigo_delito_snic_nombre"
-    #params.append(" GROUP BY codigo_delito_snic_nombre")
+    
+    query += " GROUP BY codigo_delito_snic_nombre ORDER BY cantidad DESC"
+    
     cursor.execute(query, params)
     filas = cursor.fetchall()
     columnas = [desc[0] for desc in cursor.description]
 
     datos = [dict(zip(columnas, fila)) for fila in filas]
-
-#    cursor.execute("SELECT provincia_nombre, COUNT(*) FROM estadisticas_delitos GROUP BY provincia_nombre")
-#    resultados = cursor.fetchall()
+    
     conn.close()
-    # devuelve json con los resultados
-    return jsonify(datos) 
+    # Devuelve json con los resultados
+    return jsonify(datos)
 
+if __name__ == '__main__':
+    app.run(debug=True)
