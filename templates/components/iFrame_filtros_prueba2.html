@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ABM Provincias SNIC</title>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    select, button {
+      padding: 5px;
+      margin: 5px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Filtro de Provincias SNIC</h1>
+
+  <div>
+    <label>Provincia:</label>
+    <select id="provincia"></select>
+
+    <label>Año: </label>
+    <select id="anio"></select>
+
+    <label>Tipo Delito: </label>
+    <select id="codigo_delito_snic_nombre"></select>
+
+    <button onclick="aplicarFiltros()">Filtrar</button>
+    <button onclick="abrirFormulario()">Agregar nuevo registro</button>
+    <button onclick="modificarRegistro()">Modificar registro existente</button>
+    <button onclick="elminarRegistro()">Eliminar registro existente</button>
+  </div>
+  <div id="formularioModal" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); background:#fff; padding:20px; border:1px solid #ccc; box-shadow:0 0 10px rgba(0,0,0,0.2); z-index:1000;">
+  <h3>Nuevo Registro</h3>
+  <form id="registroForm" method="POST" action="/nuevo-registro">
+    <!-- Provincia -->
+    <label for="provincia_modal">Provincia:</label>
+    <select id="provincia_modal" name="provincia_modal">
+        <option value="">Seleccione</option>
+    </select><br><br>
+
+    <!-- Tipo de delito -->
+    <label for="codigo_delito_snic_nombre_modal">Tipo de delito:</label>
+    <select id="codigo_delito_snic_nombre_modal" name="codigo_delito_snic_nombre_modal">
+      <option value="">Seleccione</option>
+    </select><br><br>
+
+    <!-- Año -->
+    <label for="anio_modal">Año:</label>
+    <input type="number" id="anio_modal" name="anio_modal" min="2000" max="2030"><br><br>
+
+    <!-- Cantidades -->
+    <label for="hechos">Cantidad de hechos:</label>
+    <input type="number" id="hechos" name="hechos"><br><br>
+
+    <label for="victimas_masc">Víctimas masculinas:</label>
+    <input type="number" id="victimas_masc" name="victimas_masc"><br><br>
+
+    <label for="victimas_fem">Víctimas femeninas:</label>
+    <input type="number" id="victimas_fem" name="victimas_fem"><br><br>
+
+    <label for="victimas_sd">Víctimas sin registrar:</label>
+    <input type="number" id="victimas_sd" name="victimas_sd"><br><br>
+
+    <!-- Campo autocompletable -->
+    <label for="victimas_total">Total de víctimas:</label>
+    <input type="number" id="victimas_total" name="victimas_total" readonly><br><br>
+
+    <button type="submit">Guardar</button>
+    <button type="button" onclick="cerrarFormulario()">Cancelar</button>
+  </form>
+</div>
+  <h3>Total registro: <span id="total">0</span></h3>
+
+  <table id="tabla">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function cargarFiltros() {
+      const res = await fetch('http://127.0.0.1:5000/filtros');
+      const data = await res.json();
+
+      const selProvincia = document.getElementById('provincia');
+      const selAnio = document.getElementById('anio');
+      const selDelito = document.getElementById('codigo_delito_snic_nombre');
+
+      const llenarSelect = (select, valores) => {
+        select.innerHTML = '<option value="">Todos</option>';
+        valores.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v;
+          select.appendChild(opt);
+        });
+      };
+
+      llenarSelect(selProvincia, data.provincias);
+      llenarSelect(selAnio, data.anio);
+      llenarSelect(selDelito, data.codigo_delito_snic_nombre);
+
+    }
+
+    async function aplicarFiltros() {
+      const filtros = {
+        provincia: document.getElementById('provincia').value,
+        anio: document.getElementById('anio').value,
+        codigo_delito_snic_nombre: document.getElementById('codigo_delito_snic_nombre').value,
+
+      };
+
+      const res = await fetch('http://127.0.0.1:5000/filtrar', {
+        method:"POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(filtros)
+      });
+      const data = await res.json();
+
+      document.getElementById('total').textContent = data.total;
+
+      const tabla = document.getElementById('tabla');
+      const thead = tabla.querySelector('thead');
+      const tbody = tabla.querySelector('tbody');
+      tbody.innerHTML = '';
+      thead.innerHTML = '';
+
+      if (data.datos.length > 0) {
+        const cols = Object.keys(data.datos[0]);
+        thead.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+        data.datos.forEach(fila => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = cols.map(c => `<td>${fila[c]}</td>`).join('');
+          tbody.appendChild(tr);
+        });
+      }
+      drawChart(filtros);
+    }
+    
+    function abrirFormulario() {
+  document.getElementById('formularioModal').style.display = 'block';
+
+  fetch('http://127.0.0.1:5000/filtros')
+    .then(res => res.json())
+    .then(data => {
+      const llenarSelect = (select, valores) => {
+        select.innerHTML = '<option value="">Seleccione</option>';
+        valores.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v;
+          select.appendChild(opt);
+        });
+      };
+
+      llenarSelect(document.getElementById('provincia_modal'), data.provincias);
+      llenarSelect(document.getElementById('codigo_delito_snic_nombre_modal'), data.codigo_delito_snic_nombre);
+    });
+}
+
+
+    function cerrarFormulario() {
+      document.getElementById('formularioModal').style.display = 'none';
+    }
+
+    // Autocompletar total de víctimas
+    const campos = ['victimas_masc', 'victimas_fem', 'victimas_sd'];
+    campos.forEach(id => {
+      document.getElementById(id).addEventListener('input', actualizarTotal);
+    });
+
+    function actualizarTotal() {
+      const masc = parseInt(document.getElementById('victimas_masc').value) || 0;
+      const fem = parseInt(document.getElementById('victimas_fem').value) || 0;
+      const sd = parseInt(document.getElementById('victimas_sd').value) || 0;
+      document.getElementById('victimas_total').value = masc + fem + sd;
+    }
+    
+    
+    window.onload = cargarFiltros;
+    
+    
+    
+    
+    //CHART1
+    google.charts.load('current', { packages: ['corechart'] });
+    google.charts.setOnLoadCallback(() => drawChart());
+    async function drawChart(filtros = {}) {
+      const res = await fetch('/estadisticas', {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(filtros)
+      });
+      const data = await res.json();
+
+      const chartData = [['Tipo de delito', 'Cantidad']];
+      data.forEach(obj => {
+        chartData.push([obj.codigo_delito_snic_nombre, obj['COUNT(*)']]);
+      });
+
+      const dataTable = google.visualization.arrayToDataTable(chartData);
+      const options = {
+        title: 'Delitos por tipo',
+        width: 800,
+        height: 500
+      };
+
+      const chart = new google.visualization.ColumnChart(document.getElementById('grafico'));
+      chart.draw(dataTable, options);
+    }
+  </script>
+<h2>Gráfico de delitos por provincia</h2>
+<div id="grafico" style="width: 1000PX; height: 400px;"></div>
+</body>
+</html>
