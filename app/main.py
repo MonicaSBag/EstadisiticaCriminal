@@ -1,6 +1,6 @@
 import sqlite3
 from flask import Flask, jsonify, render_template, request, flash, redirect, url_for
-from setup_database import crear_db as crear_db_dataset, BaseModel as BaseModelDataset
+from setup_database import crear_db as crear_db_dataset, EstadisticasDelitos, Provincia, cargar_archivo, crear_tabla
 from user_database import crear_user_db, BaseModel as BaseModelUser
 from werkzeug.security import generate_password_hash
 
@@ -8,8 +8,8 @@ app = Flask(__name__, template_folder="../templates")
 
 # INICIALIZAR BASE DE DATOS AMBAS BASES DE DATOS
 crear_db_dataset()
-BaseModelDataset.crear_tabla()
-BaseModelDataset.cargar_archivo()
+crear_tabla()
+cargar_archivo()
 crear_user_db()
 BaseModelUser.crear_user_tabla()
 app.config['SECRET_KEY'] = 'una_clave_secreta_muy_larga_y_segura' # Requerido para flashear mensajes y sesiones
@@ -43,7 +43,7 @@ def login():
         user = BaseModelUser.get(BaseModelUser.username == username)
         if user and user.check_password(password):
             flash(f'Sesión iniciada como {username}. Acceso a la carga de datos concedido.', 'success')
-            return redirect("segundo iframe de filtros el que permite crud")
+            return redirect("/dashboard-private")
         else:
             flash('Usuario o contraseña incorrectos.', 'danger')
     return render_template('login.html')
@@ -80,15 +80,15 @@ def filtros():
     cursor = conn.cursor()
     
     # Selecciona todas las provincias 
-    cursor.execute("SELECT DISTINCT provincia_nombre FROM estadisticas_delitos ORDER BY provincia_nombre")
+    cursor.execute("SELECT DISTINCT provincia_nombre FROM estadisticasdelitos ORDER BY provincia_nombre")
     provincias = [fila[0] for fila in cursor.fetchall()]
     
     # Selecciona todos los años
-    cursor.execute("SELECT DISTINCT anio FROM estadisticas_delitos ORDER BY anio")
+    cursor.execute("SELECT DISTINCT anio FROM estadisticasdelitos ORDER BY anio")
     anio = [fila[0] for fila in cursor.fetchall()]
     
     # Selecciona todos los años
-    cursor.execute("SELECT DISTINCT codigo_delito_snic_nombre FROM estadisticas_delitos ORDER BY codigo_delito_snic_nombre")
+    cursor.execute("SELECT DISTINCT codigo_delito_snic_nombre FROM estadisticasdelitos ORDER BY codigo_delito_snic_nombre")
     delito = [fila[0] for fila in cursor.fetchall()]
 
     conn.close()
@@ -111,7 +111,7 @@ def filtrar():
     conn = obtener_conexion_dataset()
     cursor = conn.cursor()
 
-    query = "SELECT * FROM estadisticas_delitos WHERE 1=1"
+    query = "SELECT * FROM estadisticasdelitos WHERE 1=1"
     params = []
 
     if provincia:
@@ -138,7 +138,38 @@ def filtrar():
     })
 @app.route('/dashboard-public')
 def dash_public():
-    return render_template("iFrame_filtros_prueba1.html")
+    return render_template("components/iFrame_filtros_prueba1.html")
+
+@app.route('/dashboard-private')
+def dash_private():
+    return render_template("components/iFrame_filtros_prueba2.html")
+
+@app.route("/nuevo-registro", methods=["POST", "GET"])
+def nuevo_registro():
+    if request.method == 'POST':
+        provincia_nomb = request.form.get('provincia_modal')
+        tipo_delito = request.form.get('codigo_delito_snic_nombre_modal')
+        anio = request.form.get('anio_modal')
+        cantidad_hechos = request.form.get('hechos')
+        cantidad_victimas = request.form.get('victimas_total')
+        cantidad_victimas_masc = request.form.get('victimas_masc')
+        cantidad_victimas_fem = request.form.get('victimas_fem')
+        cantidad_victimas_sd = request.form.get('victimas_sd')
+        registro = Provincia.get(Provincia.provincia_nombre == provincia_nomb)
+        registro2 = EstadisticasDelitos.get(EstadisticasDelitos.codigo_delito_snic_nombre == tipo_delito)
+        EstadisticasDelitos.create(
+            codigo_delito_snic_id = registro2.codigo_delito_snic_id,
+            provincia_nombre = provincia_nomb,
+            provincia_id = registro.provincia_id,
+            anio = anio,
+            codigo_delito_snic_nombre = tipo_delito,
+            cantidad_hechos = cantidad_hechos,
+            cantidad_victimas = cantidad_victimas,
+            cantidad_victimas_masc = cantidad_victimas_masc,
+            cantidad_victimas_fem = cantidad_victimas_fem,
+            cantidad_victimas_sd = cantidad_victimas_sd
+        )    
+    return render_template("components/iFrame_filtros_prueba2.html")
 # EXTRAE ESTADÍSTICAS AGRUPADAS
 @app.route('/estadisticas', methods=["POST"])
 def estadisticas():
@@ -152,7 +183,7 @@ def estadisticas():
     # Selecciona delitos y cuenta cantidad por tipo
     query = """
         SELECT codigo_delito_snic_nombre, COUNT(*) as cantidad
-        FROM estadisticas_delitos 
+        FROM estadisticasdelitos 
         WHERE 1=1
     """
     params = []
