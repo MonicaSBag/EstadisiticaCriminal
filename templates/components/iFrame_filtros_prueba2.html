@@ -44,11 +44,10 @@
 
     <button onclick="aplicarFiltros()">Filtrar</button>
     <button onclick="abrirFormulario()">Agregar nuevo registro</button>
-    <button onclick="modificarRegistro()">Modificar registro existente</button>
     <button onclick="elminarRegistro()">Eliminar registro existente</button>
   </div>
   <div id="formularioModal" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); background:#fff; padding:20px; border:1px solid #ccc; box-shadow:0 0 10px rgba(0,0,0,0.2); z-index:1000;">
-  <h3>Nuevo Registro</h3>
+    <h3>Nuevo Registro</h3>
   <form id="registroForm" method="POST" action="/nuevo-registro">
     <!-- Provincia -->
     <label for="provincia_modal">Provincia:</label>
@@ -87,8 +86,22 @@
     <button type="button" onclick="cerrarFormulario()">Cancelar</button>
   </form>
 </div>
+  <div id="formularioModalEliminar" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); background:#fff; padding:20px; border:1px solid #ccc; box-shadow:0 0 10px rgba(0,0,0,0.2); z-index:1000;">
+    <h3>Eliminar Registro</h3>
+  <form id="formularioModalEliminarForm" method="POST" action="/eliminar-registro">
+    <label for="registro_a_eliminar">ID Registro:</label>
+    <input type="number" id="registro_a_eliminar" name="registro_a_eliminar" min="2000" max="2030"><br><br>
+    <button type="button" id="botonConsultar">Consultar</button>
+    <table id="tabla2">
+    <thead></thead>
+    <tbody></tbody>
+    </table>
+    
+    <button type="button" id="botonElimar">Eliminar</button>
+    <button type="button" onclick="cerrarFormulario()">Cancelar</button>
+  </form>
+</div>
   <h3>Total registro: <span id="total">0</span></h3>
-
   <table id="tabla">
     <thead></thead>
     <tbody></tbody>
@@ -96,28 +109,37 @@
 
   <script>
     async function cargarFiltros() {
-      const res = await fetch('http://127.0.0.1:5000/filtros');
-      const data = await res.json();
+  const res = await fetch('http://127.0.0.1:5000/filtros');
+  const data = await res.json();
 
-      const selProvincia = document.getElementById('provincia');
-      const selAnio = document.getElementById('anio');
-      const selDelito = document.getElementById('codigo_delito_snic_nombre');
+  const selProvincia = document.getElementById('provincia');
+  const selAnio = document.getElementById('anio');
+  const selDelito = document.getElementById('codigo_delito_snic_nombre');
 
-      const llenarSelect = (select, valores) => {
-        select.innerHTML = '<option value="">Todos</option>';
-        valores.forEach(v => {
-          const opt = document.createElement('option');
-          opt.value = v;
-          opt.textContent = v;
-          select.appendChild(opt);
-        });
-      };
+  const llenarProvincia = (select, valores) => {
+    select.innerHTML = '';
+    valores.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = v;
+      select.appendChild(opt);
+    });
+  };
 
-      llenarSelect(selProvincia, data.provincias);
-      llenarSelect(selAnio, data.anio);
-      llenarSelect(selDelito, data.codigo_delito_snic_nombre);
+  const llenarConTodos = (select, valores) => {
+    select.innerHTML = '<option value="">Todos</option>';
+    valores.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = v;
+      select.appendChild(opt);
+    });
+  };
 
-    }
+  llenarProvincia(selProvincia, data.provincias);
+  llenarConTodos(selAnio, data.anio);
+  llenarConTodos(selDelito, data.codigo_delito_snic_nombre);
+}
 
     async function aplicarFiltros() {
       const filtros = {
@@ -155,31 +177,77 @@
     }
     
     function abrirFormulario() {
-  document.getElementById('formularioModal').style.display = 'block';
+      document.getElementById('formularioModal').style.display = 'block';
+      fetch('http://127.0.0.1:5000/filtros')
+        .then(res => res.json())
+        .then(data => {
+          const llenarSelect = (select, valores) => {
+            select.innerHTML = '<option value="">Seleccione</option>';
+            valores.forEach(v => {
+              const opt = document.createElement('option');
+              opt.value = v;
+              opt.textContent = v;
+              select.appendChild(opt);
+            });
+          };
 
-  fetch('http://127.0.0.1:5000/filtros')
-    .then(res => res.json())
-    .then(data => {
-      const llenarSelect = (select, valores) => {
-        select.innerHTML = '<option value="">Seleccione</option>';
-        valores.forEach(v => {
-          const opt = document.createElement('option');
-          opt.value = v;
-          opt.textContent = v;
-          select.appendChild(opt);
+          llenarSelect(document.getElementById('provincia_modal'), data.provincias);
+          llenarSelect(document.getElementById('codigo_delito_snic_nombre_modal'), data.codigo_delito_snic_nombre);
         });
-      };
-
-      llenarSelect(document.getElementById('provincia_modal'), data.provincias);
-      llenarSelect(document.getElementById('codigo_delito_snic_nombre_modal'), data.codigo_delito_snic_nombre);
-    });
 }
 
-
     function cerrarFormulario() {
-      document.getElementById('formularioModal').style.display = 'none';
-    }
+      const modal1 = document.getElementById('formularioModal');
+      const modal2 = document.getElementById('formularioModalEliminar');
 
+      if (modal1) modal1.style.display = 'none';
+      if (modal2) modal2.style.display = 'none';
+}
+
+    function elminarRegistro(){
+      document.getElementById('formularioModalEliminar').style.display = 'block';
+    }
+    document.getElementById("botonElimar").addEventListener("click", function() {
+      const confirmacion = confirm("¿Estás segura de que querés eliminar este registro?");
+      if (confirmacion) {
+        document.getElementById("formularioModalEliminarForm").submit();
+      }
+    });
+    document.getElementById("botonConsultar").addEventListener("click", async function() {
+  const id = document.getElementById("registro_a_eliminar").value;
+  if (!id) return;
+
+  const res = await fetch("/consultar-registro", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ registro_id: id })
+  });
+
+  const data = await res.json();
+  const tabla = document.getElementById("tabla2");
+  const thead = tabla.querySelector("thead");
+  const tbody = tabla.querySelector("tbody");
+  tbody.innerHTML = '';
+  thead.innerHTML = '';
+
+  if (data.datos.length > 0) {
+    const cols = Object.keys(data.datos[0]);
+    thead.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+    data.datos.forEach(fila => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = cols.map(c => `<td>${fila[c]}</td>`).join('');
+      tbody.appendChild(tr);
+    });
+  } else {
+    thead.innerHTML = '';
+    tbody.innerHTML = '<tr><td colspan="6">No se encontró el registro</td></tr>';
+  }
+});
+    
+    
+    
+    
+    
     // Autocompletar total de víctimas
     const campos = ['victimas_masc', 'victimas_fem', 'victimas_sd'];
     campos.forEach(id => {
