@@ -44,13 +44,16 @@ def crear_user_tabla():
             password_hash = generate_password_hash("superAdmin123"),
             tipo_usuario = 1,
         )
+        User.create(
+            username = "admin",
+            provincia_nombre = "Buenos Aires",
+            password_hash = generate_password_hash("admin123"),
+            tipo_usuario = 2,
+        )
     except:
-        print("No se pudo crear el superAdmin")
+        print("No se pudieron crear los usuarios de Prueba")
     
     print("Tabla creada o ya existente.")
 
-def set_password(self, password):
-    self.password_hash = generate_password_hash(password)
-
-def check_password(self, password):
-    return check_password_hash(self.password_hash, password)
+def check_password(password):
+    return check_password_hash(generate_password_hash(password), password)
