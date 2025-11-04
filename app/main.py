@@ -1,7 +1,7 @@
 import sqlite3
 from flask import Flask, jsonify, render_template, request, flash, redirect, url_for
 from setup_database import crear_db as crear_db_dataset, EstadisticasDelitos, Provincia, cargar_archivo, crear_tabla
-from user_database import crear_user_db, BaseModel as BaseModelUser
+from user_database import crear_user_tabla
 from werkzeug.security import generate_password_hash
 
 app = Flask(__name__, template_folder="../templates")
@@ -10,8 +10,7 @@ app = Flask(__name__, template_folder="../templates")
 crear_db_dataset()
 crear_tabla()
 cargar_archivo()
-crear_user_db()
-BaseModelUser.crear_user_tabla()
+crear_user_tabla()
 app.config['SECRET_KEY'] = 'una_clave_secreta_muy_larga_y_segura' # Requerido para flashear mensajes y sesiones
 
 # CONEXION A LA BBDD

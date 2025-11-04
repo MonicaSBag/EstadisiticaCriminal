@@ -14,21 +14,43 @@ def crear_user_db():
 class BaseModel(Model):
     class Meta:
        database = sqlite_db
-       table_name = 'user'
+       
+class TipoUsuario(BaseModel):
+    class Meta:
+        table_name = "tipo_usuario"
+    id = AutoField()
+    tipo_usuario = CharField(unique=True)
+
+class User(BaseModel):
+    class Meta:
+        table_name = 'user'
     id = AutoField()
     username = CharField(max_length=80, null=False, unique=True)
-    provincia_nombre = CharField(max_length=50)
+    provincia_nombre = CharField(max_length=50, null=False)
     password_hash = CharField(max_length=128, null=False)
+    tipo_usuario = ForeignKeyField(TipoUsuario)
 
-    @staticmethod
-    def crear_user_tabla():
-        #Crear tabla si no existe
-        ##safe=True evita error si la tabla ya existe
-        sqlite_db.create_tables([BaseModel], safe=True)
-        print("Tabla creada o ya existente.")
+@staticmethod
+def crear_user_tabla():
+    #Crear tabla si no existe
+    ##safe=True evita error si la tabla ya existe
+    sqlite_db.create_tables([User, TipoUsuario], safe=True)
+    for tipo in ["superAdmin", "admin"]:
+        TipoUsuario.get_or_create(tipo_usuario=tipo)
+    try:
+        User.create(
+            username = "superAdmin",
+            provincia_nombre = "Todos",
+            password_hash = generate_password_hash("superAdmin123"),
+            tipo_usuario = 1,
+        )
+    except:
+        print("No se pudo crear el superAdmin")
+    
+    print("Tabla creada o ya existente.")
 
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+def set_password(self, password):
+    self.password_hash = generate_password_hash(password)
 
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+def check_password(self, password):
+    return check_password_hash(self.password_hash, password)
