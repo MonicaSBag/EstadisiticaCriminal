@@ -289,5 +289,24 @@ def estadisticas():
     # Devuelve json con los resultados
     return jsonify(datos)
 
+
+@app.route("/portal_admin")
+def portal_admin():
+    return render_template("PortalAdmin.html")
+
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+
+
+
+
+
+
+
+
