@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal del Administrador - SNIC</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    header {
+      background-color: #004c99;
+      color: white;
+      padding: 20px 0;
+      text-align: center;
+    }
+    .card {
+      border-radius: 10px;
+    }
+    .btn-logout {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="position-relative">
+    <h2>Portal del Administrador - SNIC</h2>
+    <button class="btn btn-danger btn-sm btn-logout" onclick="logout()">Cerrar Sesión</button>
+  </header>
+
+  <main class="container mt-5">
+    <div class="text-center mb-4">
+      <h4>Bienvenido, Administrador 👋</h4>
+      <p>Desde aquí podés gestionar los datos y usuarios del sistema.</p>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-md-4">
+        <div class="card shadow-sm p-3 mb-3 text-center">
+          <h5>Cargar Nuevos Datos</h5>
+          <p>Importar archivos o ingresar registros manualmente.</p>
+          <button class="btn btn-success w-100">Cargar</button>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm p-3 mb-3 text-center">
+          <h5>Ver Estadísticas</h5>
+          <p>Consultar reportes y visualizaciones de datos criminales.</p>
+          <button class="btn btn-primary w-100">Ver</button>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm p-3 mb-3 text-center">
+          <h5>Administrar Usuarios</h5>
+          <p>Agregar, editar o eliminar cuentas del sistema.</p>
+          <button class="btn btn-warning w-100">Gestionar</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="text-center text-muted py-3 mt-5">
+    <small>© 2025 Sistema Nacional de Información Criminal - República Argentina</small>
+  </footer>
+
+  <script>
+    function logout() {
+      alert("Sesión finalizada ✅");
+      //agregar eliminar el usuario del navegador
+      window.location.href = "/"; // 🔹 volver a la página inicial
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

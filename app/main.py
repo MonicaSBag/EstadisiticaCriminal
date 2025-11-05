@@ -3,6 +3,8 @@ from flask import Flask, jsonify, render_template, request, flash, redirect, url
 from setup_database import crear_db as crear_db_dataset, EstadisticasDelitos, Provincia, cargar_archivo, crear_tabla
 from user_database import crear_user_db, BaseModel as BaseModelUser
 from werkzeug.security import generate_password_hash
+from flask import Flask, render_template
+
 
 app = Flask(__name__, template_folder="../templates")
 
@@ -207,5 +209,24 @@ def estadisticas():
     # Devuelve json con los resultados
     return jsonify(datos)
 
+
+@app.route("/portal_admin")
+def portal_admin():
+    return render_template("PortalAdmin.html")
+
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+
+
+
+
+
+
+
+
