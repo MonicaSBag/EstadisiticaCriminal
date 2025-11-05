@@ -43,6 +43,8 @@
     <select id="codigo_delito_snic_nombre"></select>
 
     <button onclick="aplicarFiltros()">Filtrar</button>
+    <button onclick="descargarRegistro()">Descargar CSV</button>
+
   </div>
 
   <h2>Total: <span id="total">0</span></h2>
@@ -111,6 +113,40 @@
       }
       drawChart(filtros);
     }
+    
+     function descargarRegistro() {
+      const tabla = document.getElementById("tabla");
+      let csv = [];
+
+      // Recorre las filas de la tabla
+      for (let fila of tabla.querySelectorAll("tr")) {
+        let columnas = fila.querySelectorAll("th, td");
+        let filaCSV = [];
+        columnas.forEach(col => {
+          // Escapa comillas y separadores
+          let texto = col.innerText.replace(/"/g, '""');
+          filaCSV.push(`"${texto}"`);
+        });
+        csv.push(filaCSV.join(","));
+      }
+
+      // Une todas las filas con salto de línea
+      const csvString = csv.join("\n");
+
+      // Crea un doc para descargar
+      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+
+      // Crea un enlace invisible para descargar
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "registro_criminales.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    
     window.onload = cargarFiltros;
     google.charts.load('current', { packages: ['corechart'] });
     google.charts.setOnLoadCallback(() => drawChart());

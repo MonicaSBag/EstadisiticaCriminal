@@ -30,6 +30,11 @@
   </style>
 </head>
 <body>
+  <script>
+  setTimeout(() => {
+    document.querySelectorAll('.alert').forEach(el => el.remove());
+  }, 4000);
+</script>
   <h1>Filtro de Provincias SNIC</h1>
 
   <div>
@@ -45,6 +50,7 @@
     <button onclick="aplicarFiltros()">Filtrar</button>
     <button onclick="abrirFormulario()">Agregar nuevo registro</button>
     <button onclick="elminarRegistro()">Eliminar registro existente</button>
+    <button onclick="descargarRegistro()">Descargar CSV</button>
   </div>
   <div id="formularioModal" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); background:#fff; padding:20px; border:1px solid #ccc; box-shadow:0 0 10px rgba(0,0,0,0.2); z-index:1000;">
     <h3>Nuevo Registro</h3>
@@ -243,11 +249,40 @@
     tbody.innerHTML = '<tr><td colspan="6">No se encontró el registro</td></tr>';
   }
 });
-    
-    
-    
-    
-    
+
+    function descargarRegistro() {
+      const tabla = document.getElementById("tabla");
+      let csv = [];
+
+      // Recorre las filas de la tabla
+      for (let fila of tabla.querySelectorAll("tr")) {
+        let columnas = fila.querySelectorAll("th, td");
+        let filaCSV = [];
+        columnas.forEach(col => {
+          // Escapa comillas y separadores
+          let texto = col.innerText.replace(/"/g, '""');
+          filaCSV.push(`"${texto}"`);
+        });
+        csv.push(filaCSV.join(","));
+      }
+
+      // Une todas las filas con salto de línea
+      const csvString = csv.join("\n");
+
+      // Crea un doc para descargar
+      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+
+      // Crea un enlace invisible para descargar
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "registro_criminales.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+
     // Autocompletar total de víctimas
     const campos = ['victimas_masc', 'victimas_fem', 'victimas_sd'];
     campos.forEach(id => {
@@ -260,12 +295,7 @@
       const sd = parseInt(document.getElementById('victimas_sd').value) || 0;
       document.getElementById('victimas_total').value = masc + fem + sd;
     }
-    
-    
     window.onload = cargarFiltros;
-    
-    
-    
     
     //CHART1
     google.charts.load('current', { packages: ['corechart'] });
@@ -294,7 +324,31 @@
       chart.draw(dataTable, options);
     }
   </script>
+
 <h2>Gráfico de delitos por provincia</h2>
-<div id="grafico" style="width: 1000PX; height: 400px;"></div>
+<div id="grafico" style="width: 1000PX; height: 400px;"></div> 
+<!--POP UP mensaje confirmacion-->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        {% for category, message in messages %}
+          Swal.fire({
+            icon: "{{ 'success' if category == 'success' else 'warning' if category == 'warning' else 'error' }}",
+            title: "{{ message }}",
+            showConfirmButton: false,
+            timer: 2500,
+            background: '#1e1e2f',
+            color: '#f3e8ff',
+            customClass: {
+              popup: 'rounded-4 shadow-lg'
+            }
+          });
+        {% endfor %}
+      });
+    </script>
+  {% endif %}
+{% endwith %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 </html>

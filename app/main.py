@@ -57,15 +57,12 @@ def login():
             session['provincia_nombre'] = user.provincia_nombre 
             
             if user.tipo_usuario_id == 2:
-                flash(f'Sesión iniciada como {username}. Acceso a la carga de datos concedido.', 'success')
                 return redirect("/dashboard-private")
             elif user.tipo_usuario_id == 1:
-                flash(f'Sesión iniciada como {username}.', 'success')
                 return redirect("/dashboard-private")  # RUTA A PAGINA DE SUPERUSUARIO
 
         else:
             flash('Usuario o contraseña incorrectos.', 'danger')
-
     return render_template('login.html')
 
 """@app.route('/register', methods=['GET', 'POST'])
@@ -196,43 +193,51 @@ def dash_private():
 @app.route("/nuevo-registro", methods=["POST", "GET"])
 @login_required
 def nuevo_registro():
-    if request.method == 'POST':
-        provincia_nomb = request.form.get('provincia_modal')
-        tipo_delito = request.form.get('codigo_delito_snic_nombre_modal')
-        anio = request.form.get('anio_modal')
-        cantidad_hechos = request.form.get('hechos')
-        cantidad_victimas = request.form.get('victimas_total')
-        cantidad_victimas_masc = request.form.get('victimas_masc')
-        cantidad_victimas_fem = request.form.get('victimas_fem')
-        cantidad_victimas_sd = request.form.get('victimas_sd')
-    registro = Provincia.get(Provincia.provincia_nombre == provincia_nomb)
-    registro2 = EstadisticasDelitos.get(EstadisticasDelitos.codigo_delito_snic_nombre == tipo_delito)
-    EstadisticasDelitos.create(
-        codigo_delito_snic_id = registro2.codigo_delito_snic_id,
-        provincia_nombre = provincia_nomb,
-        provincia_id = registro.provincia_id,
-        anio = anio,
-        codigo_delito_snic_nombre = tipo_delito,
-        cantidad_hechos = cantidad_hechos,
-        cantidad_victimas = cantidad_victimas,
-        cantidad_victimas_masc = cantidad_victimas_masc,
-        cantidad_victimas_fem = cantidad_victimas_fem,
-        cantidad_victimas_sd = cantidad_victimas_sd
-    )    
-    return redirect("/dashboard-private")
-
+    try:
+        if request.method == 'POST':
+            provincia_nomb = request.form.get('provincia_modal')
+            tipo_delito = request.form.get('codigo_delito_snic_nombre_modal')
+            anio = request.form.get('anio_modal')
+            cantidad_hechos = request.form.get('hechos')
+            cantidad_victimas = request.form.get('victimas_total')
+            cantidad_victimas_masc = request.form.get('victimas_masc')
+            cantidad_victimas_fem = request.form.get('victimas_fem')
+            cantidad_victimas_sd = request.form.get('victimas_sd')
+            registro = Provincia.get(Provincia.provincia_nombre == provincia_nomb)
+            registro2 = EstadisticasDelitos.get(EstadisticasDelitos.codigo_delito_snic_nombre == tipo_delito)
+            EstadisticasDelitos.create(
+                codigo_delito_snic_id = registro2.codigo_delito_snic_id,
+                provincia_nombre = provincia_nomb,
+                provincia_id = registro.provincia_id,
+                anio = anio,
+                codigo_delito_snic_nombre = tipo_delito,
+                cantidad_hechos = cantidad_hechos,
+                cantidad_victimas = cantidad_victimas,
+                cantidad_victimas_masc = cantidad_victimas_masc,
+                cantidad_victimas_fem = cantidad_victimas_fem,
+                cantidad_victimas_sd = cantidad_victimas_sd
+            )
+            flash("Registro agregado correctamente.", "success")
+            return redirect("/dashboard-private")
+    except:
+        flash(f"Error al agregar el registro: {str(e)}", "danger")
+       
 @app.route("/eliminar-registro", methods=["POST", "GET"])
 @login_required
 def eliminar_registro():
     id_registro = request.form.get('registro_a_eliminar')
+    provincia = session.get("provincia_nombre")
     try:
-        registro = EstadisticasDelitos.get_by_id(id_registro)
+        registro = EstadisticasDelitos.get(
+        (EstadisticasDelitos.id == id_registro) &
+        (EstadisticasDelitos.provincia_nombre == provincia)
+        )
         registro.delete_instance()
+        flash("Registro eliminado correctamente.", "success")
     except EstadisticasDelitos.DoesNotExist:
-        print("No se encontró el registro con ese ID.")
+        flash("No se elimino el registro seleccionado. Usuario restringido.", "warning")
     except Exception as e:
-        print(f"Error al eliminar el registro: {str(e)}")
-
+        flash(f"Error al eliminar el registro: {str(e)}", "danger")
     return redirect("/dashboard-private")
 
 @app.route('/consultar-registro', methods=['POST'])
@@ -289,13 +294,9 @@ def estadisticas():
     # Devuelve json con los resultados
     return jsonify(datos)
 
-
 @app.route("/portal_admin")
 def portal_admin():
     return render_template("PortalAdmin.html")
-
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
