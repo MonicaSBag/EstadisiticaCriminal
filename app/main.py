@@ -1,8 +1,8 @@
 import sqlite3
 from flask import Flask, jsonify, render_template, request, flash, redirect, session
 from setup_database import crear_db as crear_db_dataset, EstadisticasDelitos, Provincia, cargar_archivo, crear_tabla
-from user_database import crear_user_tabla, User
-from werkzeug.security import check_password_hash
+from user_database import crear_user_tabla, User, TipoUsuario
+from werkzeug.security import check_password_hash, generate_password_hash
 from functools import wraps
 
 app = Flask(__name__, template_folder="../templates")
@@ -321,6 +321,108 @@ def portal_admin():
     else:
         flash("Acceso denegado ❌ Solo el superAdmin puede ingresar.")
         return redirect("/")
+    
+
+# ABM DE USUARIOS
+@app.route("/usuarios")
+@login_required
+def usuarios():
+    # Solo puede entrar el superAdmin
+    if session.get("tipo_user") != 1:
+        flash("Acceso denegado ❌ Solo el superAdmin puede ingresar.")
+        return redirect("/")
+
+    usuarios = User.select(User, TipoUsuario).join(TipoUsuario)
+    return render_template("usuarios.html", usuarios=usuarios)
+
+
+@app.route("/usuarios/agregar", methods=["POST"])
+@login_required
+def agregar_usuario():
+    if session.get("tipo_user") != 1:
+        return jsonify({"success": False, "msg": "Acceso denegado ❌"})
+    
+    data = request.get_json()
+    username = data.get("username")
+    provincia = data.get("provincia_nombre")
+    password = data.get("password")
+    tipo = data.get("tipo_usuario")
+
+    try:
+        tipo_obj = TipoUsuario.get(TipoUsuario.tipo_usuario == tipo)
+        User.create(
+            username=username,
+            provincia_nombre=provincia,
+            password_hash=generate_password_hash(password),
+            tipo_usuario=tipo_obj
+        )
+        return jsonify({"success": True, "msg": "Usuario agregado ✅"})
+    except Exception as e:
+        return jsonify({"success": False, "msg": f"Error: {str(e)}"})
+
+
+@app.route("/usuarios/editar/<int:id>", methods=["POST"])
+@login_required
+def editar_usuario(id):
+    if session.get("tipo_user") != 1:
+        return jsonify({"success": False, "msg": "Acceso denegado ❌"})
+    
+    data = request.get_json()
+    username = data.get("username")
+    provincia = data.get("provincia_nombre")
+    tipo = data.get("tipo_usuario")
+
+    try:
+        user = User.get_by_id(id)
+        tipo_obj = TipoUsuario.get(TipoUsuario.tipo_usuario == tipo)
+        user.username = username
+        user.provincia_nombre = provincia
+        user.tipo_usuario = tipo_obj
+        user.save()
+        return jsonify({"success": True, "msg": "Usuario actualizado ✅"})
+    except Exception as e:
+        return jsonify({"success": False, "msg": f"Error: {str(e)}"})
+
+
+@app.route("/usuarios/eliminar/<int:id>", methods=["POST"])
+@login_required
+def eliminar_usuario(id):
+    if session.get("tipo_user") != 1:
+        return jsonify({"success": False, "msg": "Acceso denegado ❌"})
+    
+    try:
+        user = User.get_by_id(id)
+        user.delete_instance()
+        return jsonify({"success": True, "msg": "Usuario eliminado ✅"})
+    except Exception as e:
+        return jsonify({"success": False, "msg": f"Error: {str(e)}"})
+
+@app.route("/usuarios/set_password/<int:id>", methods=["POST"])
+@login_required
+def set_password(id):
+    # Solo puede hacerlo el superAdmin
+    if session.get("tipo_user") != 1:
+        return jsonify({"success": False, "msg": "Acceso denegado ❌"})
+
+    data = request.get_json() or {}
+    nueva_password = data.get("password")
+
+    if not nueva_password:
+        return jsonify({"success": False, "msg": "Debe ingresar una nueva contraseña."})
+
+    try:
+        user = User.get_by_id(id)
+        user.password_hash = generate_password_hash(nueva_password)
+        # Si tenés el campo 'must_change_password' en tu modelo User:
+        # user.must_change_password = True
+        user.save()
+
+        return jsonify({"success": True, "msg": f"Contraseña actualizada correctamente para {user.username} ✅"})
+    except User.DoesNotExist:
+        return jsonify({"success": False, "msg": "Usuario no encontrado ❌"})
+    except Exception as e:
+        return jsonify({"success": False, "msg": f"Error al cambiar la contraseña: {str(e)}"})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
