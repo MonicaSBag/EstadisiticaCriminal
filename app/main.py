@@ -220,7 +220,7 @@ def nuevo_registro():
             flash("Registro agregado correctamente.", "success")
             return redirect("/dashboard-private")
     except:
-        flash(f"Error al agregar el registro: {str(e)}", "danger")
+        flash(f"Error al agregar el registro: {str()}", "danger")
        
 @app.route("/eliminar-registro", methods=["POST", "GET"])
 @login_required
