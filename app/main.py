@@ -65,6 +65,26 @@ def login():
             flash('Usuario o contraseña incorrectos.', 'danger')
     return render_template('login.html')
 
+@app.route("/login_admin", methods=["POST"])
+def login_admin():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    try:
+        user = User.get(User.username == username)
+    except User.DoesNotExist:
+        return jsonify({"success": False, "msg": "Usuario no encontrado ❌"})
+
+    # Validar contraseña y tipo de usuario (1 = superAdmin)
+    if check_password_hash(user.password_hash, password) and user.tipo_usuario_id == 1:
+        session["user_id"] = user.id
+        session["tipo_user"] = user.tipo_usuario_id
+        return jsonify({"success": True, "msg": "Login correcto ✅"})
+    else:
+        return jsonify({"success": False, "msg": "Acceso denegado ❌ Solo el superAdmin puede ingresar."})
+
+
 """@app.route('/register', methods=['GET', 'POST'])
 def register():
     conn = obtener_conexion_user()
@@ -296,7 +316,11 @@ def estadisticas():
 
 @app.route("/portal_admin")
 def portal_admin():
-    return render_template("PortalAdmin.html")
+    if session.get("tipo_user") == 1:  # Solo superAdmin
+        return render_template("PortalAdmin.html")
+    else:
+        flash("Acceso denegado ❌ Solo el superAdmin puede ingresar.")
+        return redirect("/")
 
 if __name__ == '__main__':
     app.run(debug=True)

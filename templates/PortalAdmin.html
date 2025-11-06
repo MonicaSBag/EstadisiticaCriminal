@@ -44,7 +44,7 @@
         <div class="card shadow-sm p-3 mb-3 text-center">
           <h5>Cargar Nuevos Datos</h5>
           <p>Importar archivos o ingresar registros manualmente.</p>
-          <button class="btn btn-success w-100">Cargar</button>
+          <button class="btn btn-success w-100" onclick="irACargarDatos()">Cargar</button>
         </div>
       </div>
       <div class="col-md-4">
@@ -77,5 +77,24 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+
+  <script>
+    function irACargarDatos() {
+      // 🔹 Redirige al dashboard privado (cargar datos)
+      window.location.href = "/dashboard-private";
+    }
+
+    function logout() {
+      alert("Sesión finalizada ✅");
+      window.location.href = "/"; // 🔹 vuelve a la página inicial
+  }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
 </html>
+
+
+
+
+
