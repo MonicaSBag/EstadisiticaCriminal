@@ -4,24 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <title>Página Inicial SNIC</title>
+
+  <!-- Bootstrap + Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
   <style>
+    body {
+      background: #1e1e2f;
+      color: #fff;
+    }
     .header-snic {
-      background-color: #004c99;
-      color: white;
-      padding: 30px 0;
-      position: relative;
+      background: #111425;
+      padding: 40px 0;
+      border-bottom: 4px solid #007bff;
     }
     .btn-admin {
       position: absolute;
       top: 20px;
       right: 30px;
     }
-    .btn-custom { margin: 10px; padding: 15px 30px; font-size: 1.1em; }
-    .btn-consultar { background-color: #007bff; border-color: #007bff; }
-    .btn-cargar { background-color: #28a745; border-color: #28a745; }
-
+    .btn-custom {
+      padding: 15px 30px;
+      font-size: 1.1em;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .card-dark {
+      background: #2e2e42;
+      color: #fff;
+      border-radius: 12px;
+    }
     /* Popup */
     .popup {
       display: none;
@@ -34,58 +47,68 @@
       z-index: 1000;
     }
     .popup-content {
-      background: white;
+      background: #2e2e42;
       padding: 20px;
       border-radius: 10px;
       width: 320px;
       text-align: center;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      color: white;
+      border: 1px solid #444;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+    .popup-content .form-control {
+      background: #111425;
+      color: white;
+      border: 1px solid #555;
     }
   </style>
+
 </head>
 <body>
-  <header class="header-snic text-center">
-    <!-- 🔸 Botón Admin con popup -->
+
+  <header class="header-snic text-center position-relative">
     <button id="adminBtn" class="btn btn-warning btn-sm btn-admin">
       <i class="bi bi-shield-lock-fill"></i>
     </button>
+
     <div class="container">
-      <h1 class="display-4">Sistema Nacional de Información Criminal (SNIC)</h1>
-      <p class="lead">República Argentina</p>
+      <h1 class="fw-bold">Sistema Nacional de Información Criminal (SNIC)</h1>
+      <p class="lead text-light">República Argentina</p>
     </div>
   </header>
 
-  <div class="container my-5">
-    <div class="card shadow-sm p-4 mb-4">
-      <div class="card-body">
-        <h2 class="card-title text-center mb-4">Acerca del SNIC</h2>
-        <p class="card-text text-justify">
-          El <b>Sistema Nacional de Información Criminal (SNIC)</b> es la plataforma oficial de la República Argentina
-          que consolida y publica las estadísticas criminales a nivel nacional. Su principal objetivo es proporcionar
-          datos confiables y pertinentes a las autoridades para el diseño e implementación de <b>políticas públicas de
-          seguridad</b> y prevención del delito basadas en evidencia.
+  <main class="container my-5">
+    <div class="card card-dark shadow-lg p-4 mb-4">
+      <div class="card-body text-center">
+        <h2 class="mb-4">Acerca del SNIC</h2>
+        <p class="text-light">
+          El <b>Sistema Nacional de Información Criminal (SNIC)</b> es la plataforma oficial que centraliza
+          la información estadística del crimen en la República Argentina, facilitando el diseño de
+          <b>políticas públicas de seguridad</b> basadas en evidencia real.
         </p>
       </div>
     </div>
 
-    <div class="d-grid gap-2 d-md-flex justify-content-center">
-      <a href="{{ url_for('dash_public') }}" class="btn btn-consultar btn-lg btn-custom">
-        <i class="fas fa-search"></i> Consultar Datos
+    <div class="d-flex justify-content-center gap-3 mt-4">
+      <a href="{{ url_for('dash_public') }}" class="btn btn-primary btn-custom">
+        <i class="bi bi-bar-chart-line"></i> Consultar Datos
       </a>
-      <a href="{{ url_for('login') }}" class="btn btn-cargar btn-lg btn-custom">
-        <i class="fas fa-upload"></i> Cargar Datos (Login Requerido)
+      <a href="{{ url_for('login') }}" class="btn btn-success btn-custom">
+        <i class="bi bi-upload"></i> Cargar Datos
       </a>
     </div>
-  </div>
+  </main>
 
-  <!-- 🔹 Popup de Login -->
+  <!-- Popup Admin Login -->
   <div id="loginPopup" class="popup">
     <div class="popup-content">
-      <button class="btn-close float-end" onclick="cerrarPopup()"></button>
-      <h4>Acceso Administrador</h4>
-      <input type="text" id="usuario" class="form-control mt-3" placeholder="Usuario">
+      <button class="btn-close btn-close-white float-end" onclick="cerrarPopup()"></button>
+      <h4 class="mb-3">Acceso Administrador</h4>
+
+      <input type="text" id="usuario" class="form-control mt-2" placeholder="Usuario">
       <input type="password" id="password" class="form-control mt-2" placeholder="Contraseña">
-      <button class="btn btn-primary mt-3 w-100" onclick="login()">Entrar</button>
+
+      <button class="btn btn-primary w-100 mt-3" onclick="login()">Entrar</button>
     </div>
   </div>
 
@@ -102,30 +125,27 @@
     }
 
     async function login() {
-    const user = document.getElementById('usuario').value.trim();
-    const pass = document.getElementById('password').value.trim();
+      const user = document.getElementById('usuario').value.trim();
+      const pass = document.getElementById('password').value.trim();
 
-    const response = await fetch("/login_admin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: user, password: pass })
-    });
+      const response = await fetch("/login_admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user, password: pass })
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (data.success) {
-      alert(data.msg);
-      cerrarPopup();
-      window.location.href = "{{ url_for('portal_admin') }}";
-    } else {
-      alert(data.msg);
+      if (data.success) {
+        cerrarPopup();
+        window.location.href = "{{ url_for('portal_admin') }}";
+      } else {
+        alert(data.msg);
       }
     }
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 
-    
 </body>
 </html>
