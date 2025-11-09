@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+  <h2 class="mb-4 text-center">Gestión de Usuarios</h2>
+
+  <!-- Botón nuevo usuario -->
+  <div class="text-end mb-3">
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">➕ Nuevo Usuario</button>
+  </div>
+
+  <!-- Tabla de usuarios -->
+  <table class="table table-bordered table-striped text-center align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>ID</th>
+        <th>Usuario</th>
+        <th>Provincia</th>
+        <th>Tipo</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for usuario in usuarios %}
+      <tr>
+        <td>{{ usuario.id }}</td>
+        <td>{{ usuario.username }}</td>
+        <td>{{ usuario.provincia_nombre }}</td>
+        <td>{{ usuario.tipo_usuario.tipo_usuario }}</td>
+        <td>
+          <button class="btn btn-sm btn-primary me-1"
+            onclick="abrirEditarUsuario({{ usuario.id }}, '{{ usuario.username }}', '{{ usuario.provincia_nombre }}', '{{ usuario.tipo_usuario.tipo_usuario }}')">
+            ✏️ Editar
+          </button>
+          <button class="btn btn-sm btn-warning me-1" onclick="abrirModalPassword({{ usuario.id }}, '{{ usuario.username }}')">
+            🔑 Contraseña
+          </button>
+          <button class="btn btn-sm btn-danger" onclick="eliminarUsuario({{ usuario.id }})">
+            🗑 Eliminar
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal Nuevo Usuario -->
+<div class="modal fade" id="modalNuevoUsuario" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formNuevoUsuario">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title">Nuevo Usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nombre de Usuario</label>
+            <input type="text" name="username" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Provincia</label>
+            <input type="text" name="provincia_nombre" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Tipo de Usuario</label>
+            <select name="tipo_usuario" class="form-select" required>
+              <option value="superAdmin">SuperAdmin</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Contraseña Inicial</label>
+            <input type="password" name="password" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success w-100">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Usuario -->
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formEditarUsuario">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Editar Usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="id" id="editId">
+          <div class="mb-3">
+            <label class="form-label">Nombre de Usuario</label>
+            <input type="text" name="username" id="editUsername" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Provincia</label>
+            <input type="text" name="provincia_nombre" id="editProvincia" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Tipo de Usuario</label>
+            <select name="tipo_usuario" id="editTipo" class="form-select" required>
+              <option value="superAdmin">SuperAdmin</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary w-100">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cambiar Contraseña -->
+<div class="modal fade" id="modalPassword" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formPassword">
+        <div class="modal-header bg-warning">
+          <h5 class="modal-title">Cambiar Contraseña</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="passUserId">
+          <p id="passUserLabel" class="fw-bold"></p>
+          <div class="mb-3">
+            <label class="form-label">Nueva Contraseña</label>
+            <input type="password" id="passNueva" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-warning w-100">Guardar Nueva Contraseña</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ------- AGREGAR USUARIO -------
+  document.getElementById("formNuevoUsuario").addEventListener("submit", async e => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    const resp = await fetch("/usuarios/agregar", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(data)
+    });
+    const res = await resp.json();
+    alert(res.msg);
+    if (res.success) location.reload();
+  });
+
+  // ------- EDITAR USUARIO -------
+  function abrirEditarUsuario(id, username, provincia, tipo) {
+    document.getElementById("editId").value = id;
+    document.getElementById("editUsername").value = username;
+    document.getElementById("editProvincia").value = provincia;
+    document.getElementById("editTipo").value = tipo;
+    new bootstrap.Modal(document.getElementById("modalEditarUsuario")).show();
+  }
+
+  document.getElementById("formEditarUsuario").addEventListener("submit", async e => {
+    e.preventDefault();
+    const id = document.getElementById("editId").value;
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    const resp = await fetch(`/usuarios/editar/${id}`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(data)
+    });
+    const res = await resp.json();
+    alert(res.msg);
+    if (res.success) location.reload();
+  });
+
+  // ------- ELIMINAR USUARIO -------
+  async function eliminarUsuario(id) {
+    if (!confirm("¿Seguro que desea eliminar este usuario?")) return;
+    const resp = await fetch(`/usuarios/eliminar/${id}`, {method: "POST"});
+    const res = await resp.json();
+    alert(res.msg);
+    if (res.success) location.reload();
+  }
+
+  // ------- CAMBIAR CONTRASEÑA -------
+  function abrirModalPassword(id, username) {
+    document.getElementById("passUserId").value = id;
+    document.getElementById("passUserLabel").innerText = `Usuario: ${username}`;
+    new bootstrap.Modal(document.getElementById("modalPassword")).show();
+  }
+
+  document.getElementById("formPassword").addEventListener("submit", async e => {
+    e.preventDefault();
+    const id = document.getElementById("passUserId").value;
+    const password = document.getElementById("passNueva").value;
+    const resp = await fetch(`/usuarios/set_password/${id}`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({password})
+    });
+    const res = await resp.json();
+    alert(res.msg);
+    if (res.success) location.reload();
+  });
+</script>
+
+{% endblock %}
+
