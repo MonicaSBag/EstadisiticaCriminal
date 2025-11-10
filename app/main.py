@@ -84,7 +84,6 @@ def login_admin():
     else:
         return jsonify({"success": False, "msg": "Acceso denegado ❌ Solo el superAdmin puede ingresar."})
 
-
 """@app.route('/register', methods=['GET', 'POST'])
 def register():
     conn = obtener_conexion_user()
@@ -278,41 +277,40 @@ def consultar_registro():
         return jsonify({"datos": []})
 
 # EXTRAE ESTADÍSTICAS AGRUPADAS
-@app.route('/estadisticas', methods=["POST"])
+@app.route('/estadisticas', methods=["GET"])
 def estadisticas():
     conn = obtener_conexion_dataset()
     cursor = conn.cursor()
-    
-    filtros = request.get_json() or {}
-    provincia = filtros.get('provincia')
-    anio = filtros.get('anio')    
-    
-    # Selecciona delitos y cuenta cantidad por tipo
+
+    provincia = request.args.get('provincia')
+    anio = request.args.get('anio')
+
     query = """
         SELECT codigo_delito_snic_nombre, COUNT(*) as cantidad
         FROM estadisticasdelitos 
         WHERE 1=1
     """
     params = []
-    
+
     if provincia:
         query += " AND provincia_nombre = ?"
         params.append(provincia)
     if anio:
         query += " AND anio = ?"
         params.append(anio)
-    
+
     query += " GROUP BY codigo_delito_snic_nombre ORDER BY cantidad DESC"
-    
+
     cursor.execute(query, params)
     filas = cursor.fetchall()
     columnas = [desc[0] for desc in cursor.description]
 
     datos = [dict(zip(columnas, fila)) for fila in filas]
-    
+
+    cursor.close()
     conn.close()
-    # Devuelve json con los resultados
     return jsonify(datos)
+
 
 @app.route("/portal_admin")
 def portal_admin():
@@ -322,7 +320,6 @@ def portal_admin():
         flash("Acceso denegado ❌ Solo el superAdmin puede ingresar.")
         return redirect("/")
     
-
 # ABM DE USUARIOS
 @app.route("/usuarios")
 @login_required
@@ -334,7 +331,6 @@ def usuarios():
 
     usuarios = User.select(User, TipoUsuario).join(TipoUsuario)
     return render_template("usuarios.html", usuarios=usuarios)
-
 
 @app.route("/usuarios/agregar", methods=["POST"])
 @login_required
@@ -360,7 +356,6 @@ def agregar_usuario():
     except Exception as e:
         return jsonify({"success": False, "msg": f"Error: {str(e)}"})
 
-
 @app.route("/usuarios/editar/<int:id>", methods=["POST"])
 @login_required
 def editar_usuario(id):
@@ -382,7 +377,6 @@ def editar_usuario(id):
         return jsonify({"success": True, "msg": "Usuario actualizado ✅"})
     except Exception as e:
         return jsonify({"success": False, "msg": f"Error: {str(e)}"})
-
 
 @app.route("/usuarios/eliminar/<int:id>", methods=["POST"])
 @login_required
@@ -422,7 +416,6 @@ def set_password(id):
         return jsonify({"success": False, "msg": "Usuario no encontrado ❌"})
     except Exception as e:
         return jsonify({"success": False, "msg": f"Error al cambiar la contraseña: {str(e)}"})
-
 
 if __name__ == '__main__':
     app.run(debug=True)
