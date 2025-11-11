@@ -65,6 +65,12 @@ def login():
             flash('Usuario o contraseña incorrectos.', 'danger')
     return render_template('login.html')
 
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Sesión cerrada correctamente.', 'success')
+    return redirect('/')
+
 @app.route("/login_admin", methods=["POST"])
 def login_admin():
     data = request.get_json()
