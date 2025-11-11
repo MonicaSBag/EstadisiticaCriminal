@@ -1,5 +1,5 @@
 import sqlite3
-from flask import Flask, jsonify, render_template, request, flash, redirect, session
+from flask import Flask, jsonify, render_template, request, flash, redirect, session, url_for
 from setup_database import crear_db as crear_db_dataset, EstadisticasDelitos, Provincia, cargar_archivo, crear_tabla
 from user_database import crear_user_tabla, User, TipoUsuario
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -44,26 +44,34 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        
+
         try:
             user = User.get(User.username == username)
         except User.DoesNotExist:
             flash('Usuario o contraseña incorrectos.', 'danger')
             return render_template('login.html')
-        
-        if check_password_hash(user.password_hash, password):  # o check_password(user.password, password)
+
+        if check_password_hash(user.password_hash, password):
+            # Guardar datos en la sesión
             session['user_id'] = user.id
             session['tipo_user'] = user.tipo_usuario_id
-            session['provincia_nombre'] = user.provincia_nombre 
-            
+            session['provincia_nombre'] = user.provincia_nombre
+
+            # 🔹 Si el usuario debe cambiar la contraseña, lo enviamos a esa ruta
+            if user.debe_cambiar_password:
+                return redirect(url_for('cambiar_password_primera_vez'))
+
+            # 🔹 Caso contrario, login normal
             if user.tipo_usuario_id == 2:
                 return redirect("/dashboard-private")
             elif user.tipo_usuario_id == 1:
-                return redirect("/dashboard-private")  # RUTA A PAGINA DE SUPERUSUARIO
-
+                return redirect("/portal_admin")  # o tu ruta de superadmin
         else:
             flash('Usuario o contraseña incorrectos.', 'danger')
+
+    # GET: renderiza el formulario normal
     return render_template('login.html')
+
 
 @app.route('/logout')
 def logout():
@@ -360,7 +368,8 @@ def agregar_usuario():
             username=username,
             provincia_nombre=provincia,
             password_hash=generate_password_hash(password),
-            tipo_usuario=tipo_obj
+            tipo_usuario=tipo_obj,
+            debe_cambiar_password=True
         )
         return jsonify({"success": True, "msg": "Usuario agregado ✅"})
     except Exception as e:
@@ -419,20 +428,64 @@ def set_password(id):
     try:
         user = User.get_by_id(id)
         user.password_hash = generate_password_hash(nueva_password)
-        # Si tenés el campo 'must_change_password' en tu modelo User:
-        # user.must_change_password = True
+        user.debe_cambiar_password = True  # 🔹 Forzar que cambie la contraseña en el próximo login
         user.save()
 
-        return jsonify({"success": True, "msg": f"Contraseña actualizada correctamente para {user.username} ✅"})
+        return jsonify({
+            "success": True,
+            "msg": f"Contraseña actualizada correctamente para {user.username} ✅ (deberá cambiarla al iniciar sesión)"
+        })
     except User.DoesNotExist:
         return jsonify({"success": False, "msg": "Usuario no encontrado ❌"})
     except Exception as e:
         return jsonify({"success": False, "msg": f"Error al cambiar la contraseña: {str(e)}"})
+    
+@app.route('/cambiar_password_primera_vez', methods=['GET', 'POST'])
+@login_required
+def cambiar_password_primera_vez():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("Debe iniciar sesión primero.", "warning")
+        return redirect(url_for('login'))
+
+    user = User.get_by_id(user_id)
+
+    if request.method == 'POST':
+        nueva = request.form.get('nueva_password')
+        confirmar = request.form.get('confirmar_password')
+
+        if not nueva or not confirmar:
+            flash("Debe completar ambos campos.", "warning")
+            return redirect(url_for('cambiar_password_primera_vez'))
+
+        if nueva != confirmar:
+            flash("Las contraseñas no coinciden.", "danger")
+            return redirect(url_for('cambiar_password_primera_vez'))
+
+        # 🔹 Actualiza la contraseña y desactiva la obligación de cambio
+        user.password_hash = generate_password_hash(nueva)
+        user.debe_cambiar_password = False
+        user.save()
+
+        flash("Contraseña actualizada correctamente ✅", "success")
+
+        # 🔹 Redirige según el tipo de usuario
+        if user.tipo_usuario_id == 1:
+            return redirect("/portal_admin")
+        else:
+            return redirect("/dashboard-private")
+
+    # GET: mostrar el formulario para cambiar la contraseña
+    return render_template('cambiar_password_primera_vez.html', user=user)
 
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
+    from user_database import crear_user_tabla, verificar_o_agregar_campo
+
+    crear_user_tabla()             # 🔹 Crea las tablas si no existen
+    verificar_o_agregar_campo()    # 🔹 Asegura que el campo exista
     app.run(debug=True)
-
 
 
 

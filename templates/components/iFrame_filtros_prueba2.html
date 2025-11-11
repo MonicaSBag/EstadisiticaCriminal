@@ -16,6 +16,19 @@
         .box { background: #2e2e42; padding:20px; border-radius:10px; }
         h1 { text-align:center; margin-bottom:25px; }
         #grafico { background: #fff; border-radius:10px; padding:10px; }
+        .table-box {
+            background: #2e2e42;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .table-box table {
+            font-size: 0.9rem;
+        }
+        .table-box th, .table-box td {
+            white-space: nowrap;
+            padding: 8px 5px;
+        }
     </style>
 </head>
 <body>
@@ -74,29 +87,24 @@
     </div>
 
     <!-- TABLA -->
-    <div class="box table-responsive mb-4">
+    <div class="table-box table-responsive" style="max-height: 600px; overflow-y: auto;">
         <table class="table table-striped table-dark text-center" id="tablaDelitos">
             <thead>
                 <tr>
                     <th>Provincia</th>
                     <th>Año</th>
                     <th>Tipo Delito</th>
-                    <th>Total</th>
+                    <th>Hechos</th>
+                    <th>Víctimas</th>
+                    <th>Víctimas Masc</th>
+                    <th>Víctimas Fem</th>
                 </tr>
             </thead>
             <tbody>
-                {% for row in data %}
-                <tr>
-                    <td>{{ row.provincia }}</td>
-                    <td>{{ row.anio_hecho }}</td>
-                    <td>{{ row.codigo_delito_snic_nombre }}</td>
-                    <td>{{ row.total }}</td>
-                </tr>
-                {% endfor %}
             </tbody>
         </table>
 
-        <p>Total registros: <strong id="totalTabla">{{ data|length }}</strong></p>
+        <p>Total registros: <strong id="totalTabla">0</strong></p>
     </div>
 
     <!-- GRÁFICO -->
@@ -122,7 +130,7 @@ async function aplicarFiltros() {
     const filtros = {
         provincia: document.getElementById("filtroProvincia").value,
         anio: document.getElementById("filtroAnio").value,
-        delito: document.getElementById("filtroDelito").value
+        codigo_delito_snic_nombre: document.getElementById("filtroDelito").value
     };
 
     const res = await fetch("/filtrar", {
@@ -149,19 +157,19 @@ function actualizarTabla(datos) {
     datos.forEach(row =>{
         tabla.innerHTML += `
         <tr>
-            <td>${row.provincia}</td>
-            <td>${row.anio_hecho}</td>
-            <td>${row.codigo_delito_snic_nombre}</td>
-            <td>${row.total}</td>
+            <td>${row.provincia_nombre || ''}</td>
+            <td>${row.anio || ''}</td>
+            <td>${row.codigo_delito_snic_nombre || ''}</td>
+            <td>${row.cantidad_hechos || 0}</td>
+            <td>${row.cantidad_victimas || 0}</td>
+            <td>${row.cantidad_victimas_masc || 0}</td>
+            <td>${row.cantidad_victimas_fem || 0}</td>
         </tr>`;
     });
     document.getElementById("totalTabla").innerText = datos.length;
 }
 
 // ✅ GOOGLE CHART
-google.charts.load("current", {packages:["corechart"]});
-google.charts.setOnLoadCallback(() => drawChart());
-
 async function drawChart(filtros = {}) {
     const res = await fetch("/estadisticas", {
         method:"POST",
@@ -171,9 +179,9 @@ async function drawChart(filtros = {}) {
 
     const data = await res.json();
 
-    const chartData = [["Tipo Delito", "Total"]];
+    const chartData = [["Tipo Delito", "Cantidad"]];
     data.forEach(row =>
-        chartData.push([row.codigo_delito_snic_nombre, row.total])
+        chartData.push([row.codigo_delito_snic_nombre, row['COUNT(*)'] || 0])
     );
 
     const dataTable = google.visualization.arrayToDataTable(chartData);
@@ -185,7 +193,39 @@ async function drawChart(filtros = {}) {
         legend: { position: "bottom" }
     });
 }
-</script>
 
-</body>
-</html>
+// ✅ CARGAR FILTROS DINÁMICAMENTE
+async function cargarFiltros() {
+    const res = await fetch('/filtros2');
+    const data = await res.json();
+
+    const selProvincia = document.getElementById('filtroProvincia');
+    const selAnio = document.getElementById('filtroAnio');
+    const selDelito = document.getElementById('filtroDelito');
+
+    const llenarSelect = (select, valores) => {
+        // Limpiar opciones excepto la primera
+        while (select.options.length > 1) {
+            select.remove(1);
+        }
+        valores.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = v;
+            select.appendChild(opt);
+        });
+    };
+
+    llenarSelect(selProvincia, data.provincias);
+    llenarSelect(selAnio, data.anio);
+    llenarSelect(selDelito, data.codigo_delito_snic_nombre);
+    
+    // Cargar todos los registros al inicializar
+    aplicarFiltros();
+}
+
+// ✅ INICIALIZAR
+window.onload = () => {
+    google.charts.load('current', { packages: ['corechart'] });
+    google.charts.setOnLoadCallback(cargarFiltros);
+}
