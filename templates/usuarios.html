@@ -32,13 +32,13 @@
         <td>{{ usuario.tipo_usuario.tipo_usuario }}</td>
         <td>
           <button class="btn btn-sm btn-primary me-1"
-            onclick="abrirEditarUsuario({{ usuario.id }}, '{{ usuario.username }}', '{{ usuario.provincia_nombre }}', '{{ usuario.tipo_usuario.tipo_usuario }}')">
+            onclick="abrirEditarUsuario('{{ usuario.id }}', '{{ usuario.username }}', '{{ usuario.provincia_nombre }}', '{{ usuario.tipo_usuario.tipo_usuario }}')">
             ✏️ Editar
           </button>
-          <button class="btn btn-sm btn-warning me-1" onclick="abrirModalPassword({{ usuario.id }}, '{{ usuario.username }}')">
+          <button class="btn btn-sm btn-warning me-1" onclick="abrirModalPassword('{{ usuario.id }}', '{{ usuario.username }}')">
             🔑 Contraseña
           </button>
-          <button class="btn btn-sm btn-danger" onclick="eliminarUsuario({{ usuario.id }})">
+          <button class="btn btn-sm btn-danger" onclick="eliminarUsuario('{{ usuario.id }}')">
             🗑 Eliminar
           </button>
         </td>

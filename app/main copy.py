@@ -1,6 +1,5 @@
 import sqlite3
 from flask import Flask, jsonify, render_template, request, flash, redirect, session, url_for
-from flask import Flask, jsonify, render_template, request, flash, redirect, session, url_for
 from setup_database import crear_db as crear_db_dataset, EstadisticasDelitos, Provincia, cargar_archivo, crear_tabla
 from user_database import crear_user_tabla, User, TipoUsuario
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -46,15 +45,11 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
 
-
         try:
             user = User.get(User.username == username)
         except User.DoesNotExist:
             flash('Usuario o contraseña incorrectos.', 'danger')
             return render_template('login.html')
-
-        if check_password_hash(user.password_hash, password):
-            # Guardar datos en la sesión
 
         if check_password_hash(user.password_hash, password):
             # Guardar datos en la sesión
@@ -67,32 +62,15 @@ def login():
                 return redirect(url_for('cambiar_password_primera_vez'))
 
             # 🔹 Caso contrario, login normal
-            session['provincia_nombre'] = user.provincia_nombre
-
-            # 🔹 Si el usuario debe cambiar la contraseña, lo enviamos a esa ruta
-            if user.debe_cambiar_password:
-                return redirect(url_for('cambiar_password_primera_vez'))
-
-            # 🔹 Caso contrario, login normal
             if user.tipo_usuario_id == 2:
                 return redirect("/dashboard-private")
             elif user.tipo_usuario_id == 1:
-                return redirect("/portal_admin")  # o tu ruta de superadmin
                 return redirect("/portal_admin")  # o tu ruta de superadmin
         else:
             flash('Usuario o contraseña incorrectos.', 'danger')
 
     # GET: renderiza el formulario normal
-
-    # GET: renderiza el formulario normal
     return render_template('login.html')
-
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    flash('Sesión cerrada correctamente.', 'success')
-    return redirect('/')
 
 
 @app.route('/logout')
@@ -278,6 +256,24 @@ def nuevo_registro():
     except:
         flash(f"Error al agregar el registro: {str()}", "danger")
        
+@app.route("/eliminar-registro", methods=["POST", "GET"])
+@login_required
+def eliminar_registro():
+    id_registro = request.form.get('registro_a_eliminar')
+    provincia = session.get("provincia_nombre")
+    try:
+        registro = EstadisticasDelitos.get(
+        (EstadisticasDelitos.id == id_registro) &
+        (EstadisticasDelitos.provincia_nombre == provincia)
+        )
+        registro.delete_instance()
+        flash("Registro eliminado correctamente.", "success")
+    except EstadisticasDelitos.DoesNotExist:
+        flash("No se elimino el registro seleccionado. Usuario restringido.", "warning")
+    except Exception as e:
+        flash(f"Error al eliminar el registro: {str(e)}", "danger")
+    return redirect("/dashboard-private")
+
 @app.route('/consultar-registro', methods=['POST'])
 def consultar_registro():
     id_registro = request.json.get('registro_id')
@@ -374,8 +370,6 @@ def agregar_usuario():
             password_hash=generate_password_hash(password),
             tipo_usuario=tipo_obj,
             debe_cambiar_password=True
-            tipo_usuario=tipo_obj,
-            debe_cambiar_password=True
         )
         return jsonify({"success": True, "msg": "Usuario agregado ✅"})
     except Exception as e:
@@ -435,13 +429,8 @@ def set_password(id):
         user = User.get_by_id(id)
         user.password_hash = generate_password_hash(nueva_password)
         user.debe_cambiar_password = True  # 🔹 Forzar que cambie la contraseña en el próximo login
-        user.debe_cambiar_password = True  # 🔹 Forzar que cambie la contraseña en el próximo login
         user.save()
 
-        return jsonify({
-            "success": True,
-            "msg": f"Contraseña actualizada correctamente para {user.username} ✅ (deberá cambiarla al iniciar sesión)"
-        })
         return jsonify({
             "success": True,
             "msg": f"Contraseña actualizada correctamente para {user.username} ✅ (deberá cambiarla al iniciar sesión)"
@@ -490,20 +479,10 @@ def cambiar_password_primera_vez():
     return render_template('cambiar_password_primera_vez.html', user=user)
 
 
-
 if __name__ == "__main__":
     from user_database import crear_user_tabla, verificar_o_agregar_campo
 
     crear_user_tabla()             # 🔹 Crea las tablas si no existen
     verificar_o_agregar_campo()    # 🔹 Asegura que el campo exista
     app.run(debug=True)
-
-
-
-
-
-
-
-
-
 
