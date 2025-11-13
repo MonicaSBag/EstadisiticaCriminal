@@ -1,16 +1,85 @@
 {% extends "base.html" %}
 {% block content %}
 
+<style>
+  body {
+    background: #1e1e2f !important;
+    color: #fff !important;
+  }
+
+  .container, h2, label, p, th, td {
+    color: #fff !important;
+  }
+
+  table {
+    background: #2e2e42 !important;
+    border-color: #3a3a52 !important;
+  }
+
+  .table thead {
+    background: #3a3a52 !important;
+    color: #fff !important;
+  }
+
+  .table tbody tr:hover {
+    background: #3a3a52 !important;
+    cursor: pointer;
+  }
+
+  .table-bordered td, 
+  .table-bordered th {
+    border-color: #4a4a62 !important;
+  }
+
+  .modal-content {
+    background: #2e2e42 !important;
+    color: #fff !important;
+    border: 1px solid #3a3a52;
+  }
+
+  .modal-header {
+    border-bottom: 1px solid #3a3a52;
+  }
+
+  .modal-footer {
+    border-top: 1px solid #3a3a52;
+  }
+
+  .form-control, .form-select {
+    background: #1e1e2f !important;
+    color: #fff !important;
+    border: 1px solid #4a4a62 !important;
+  }
+
+  .form-control:focus, .form-select:focus {
+    background: #2e2e42 !important;
+    color: #fff !important;
+    border-color: #ffc107 !important;
+    box-shadow: none !important;
+  }
+  /* --- TEXTO DE FILAS EN NEGRO --- */
+  table tbody tr td {
+    color: #000 !important;
+  }
+
+  /* Encabezados siguen blancos */
+  table thead th {
+    color: #fff !important;
+  }
+  /* Botones opcionalmente sin cambios (Bootstrap) */
+</style>
+
 <div class="container mt-4">
   <h2 class="mb-4 text-center">Gestión de Usuarios</h2>
 
   <!-- Botón nuevo usuario -->
   <div class="text-end mb-3">
     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">➕ Nuevo Usuario</button>
-      <a href="http://localhost:5000/portal_admin" class="btn btn-primary">
-        Menu principal
-      </a>  
-    </div>
+
+    <a href="http://localhost:5000/portal_admin" class="btn btn-primary">
+      Menu principal
+    </a>
+  </div>
 
   <!-- Tabla de usuarios -->
   <table class="table table-bordered table-striped text-center align-middle">
@@ -52,20 +121,24 @@
 <div class="modal fade" id="modalNuevoUsuario" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
+
       <form id="formNuevoUsuario">
         <div class="modal-header bg-success text-white">
           <h5 class="modal-title">Nuevo Usuario</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
+
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Nombre de Usuario</label>
             <input type="text" name="username" class="form-control" required>
           </div>
+
           <div class="mb-3">
             <label class="form-label">Provincia</label>
             <input type="text" name="provincia_nombre" class="form-control" required>
           </div>
+
           <div class="mb-3">
             <label class="form-label">Tipo de Usuario</label>
             <select name="tipo_usuario" class="form-select" required>
@@ -73,15 +146,18 @@
               <option value="admin">Admin</option>
             </select>
           </div>
+
           <div class="mb-3">
             <label class="form-label">Contraseña Inicial</label>
             <input type="password" name="password" class="form-control" required>
           </div>
         </div>
+
         <div class="modal-footer">
           <button type="submit" class="btn btn-success w-100">Guardar</button>
         </div>
       </form>
+
     </div>
   </div>
 </div>
@@ -90,21 +166,26 @@
 <div class="modal fade" id="modalEditarUsuario" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
+
       <form id="formEditarUsuario">
         <div class="modal-header bg-primary text-white">
           <h5 class="modal-title">Editar Usuario</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
+
         <div class="modal-body">
           <input type="hidden" name="id" id="editId">
+
           <div class="mb-3">
             <label class="form-label">Nombre de Usuario</label>
             <input type="text" name="username" id="editUsername" class="form-control" required>
           </div>
+
           <div class="mb-3">
             <label class="form-label">Provincia</label>
             <input type="text" name="provincia_nombre" id="editProvincia" class="form-control" required>
           </div>
+
           <div class="mb-3">
             <label class="form-label">Tipo de Usuario</label>
             <select name="tipo_usuario" id="editTipo" class="form-select" required>
@@ -113,10 +194,12 @@
             </select>
           </div>
         </div>
+
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary w-100">Guardar Cambios</button>
         </div>
       </form>
+
     </div>
   </div>
 </div>
@@ -125,23 +208,30 @@
 <div class="modal fade" id="modalPassword" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
+
       <form id="formPassword">
+
         <div class="modal-header bg-warning">
-          <h5 class="modal-title">Cambiar Contraseña</h5>
+          <h5 class="modal-title text-dark fw-bold">Cambiar Contraseña</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
+
         <div class="modal-body">
           <input type="hidden" id="passUserId">
           <p id="passUserLabel" class="fw-bold"></p>
+
           <div class="mb-3">
             <label class="form-label">Nueva Contraseña</label>
             <input type="password" id="passNueva" class="form-control" required>
           </div>
         </div>
+
         <div class="modal-footer">
           <button type="submit" class="btn btn-warning w-100">Guardar Nueva Contraseña</button>
         </div>
+
       </form>
+
     </div>
   </div>
 </div>
@@ -216,4 +306,3 @@
 </script>
 
 {% endblock %}
-

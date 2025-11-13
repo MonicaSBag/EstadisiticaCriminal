@@ -281,9 +281,7 @@
         <div id="paginacion" class="d-flex gap-2 mt-2"></div>
     </div>
 
-    <!-- GRÁFICO -->
-    <h2 class="text-center mb-3">Cantidad de delitos por tipo</h2>
-    <div id="grafico" style="width:100%; height:450px;"></div>
+    
 
 </div>
 
@@ -741,32 +739,6 @@ function dibujarPaginacion(totalRegistros) {
     }
 }
 
-// ========================================
-// GRÁFICO
-// ========================================
-google.charts.load("current", { packages: ["corechart"] });
-google.charts.setOnLoadCallback(() => drawChart());
-
-async function drawChart(filtros = {}) {
-    const res = await fetch("/estadisticas", {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(filtros)
-    });
-
-    const data = await res.json();
-    const chartData = [["Tipo Delito", "Total"]];
-    data.forEach(row => chartData.push([row.codigo_delito_snic_nombre, row.cantidad]));
-
-    const dataTable = google.visualization.arrayToDataTable(chartData);
-    const chart = new google.visualization.ColumnChart(document.getElementById("grafico"));
-
-    chart.draw(dataTable, {
-        title: "Delitos por categoría",
-        backgroundColor: "#ffffff",
-        legend: { position: "bottom" }
-    });
-}
 </script>
 
 </body>

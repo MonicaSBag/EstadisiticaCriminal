@@ -278,26 +278,34 @@
     }
 
     function descargarRegistro() {
-      const tabla = document.getElementById("tabla");
-      const csv = [];
+  const csv = [];
 
-      tabla.querySelectorAll("tr").forEach(fila => {
-        const columnas = Array.from(fila.querySelectorAll("th, td"));
-        const filaCSV = columnas.map(col => `"${col.innerText.replace(/"/g, '""')}"`);
-        csv.push(filaCSV.join(","));
-      });
+  // Cabecera
+  csv.push('"Provincia","Año","Tipo Delito","Total Hechos","Total Víctimas"');
 
-      const blob = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
+  // Todas las filas desde datosGlobales
+  datosGlobales.forEach(row => {
+    const filaCSV = [
+      `"${String(row.provincia_nombre).replace(/"/g, '""')}"`,
+      `"${String(row.anio).replace(/"/g, '""')}"`,
+      `"${String(row.codigo_delito_snic_nombre).replace(/"/g, '""')}"`,
+      `"${String(row.cantidad_hechos || 0).toString().replace(/"/g, '""')}"`,
+      `"${String(row.cantidad_victimas || 0).toString().replace(/"/g, '""')}"`
+    ];
+    csv.push(filaCSV.join(","));
+  });
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "estadisticas_criminales.csv";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }
+  const blob = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "estadisticas_criminales.csv";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
 
     async function aplicarFiltros() {
       const filtros = {
