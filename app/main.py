@@ -54,10 +54,7 @@ def login():
             return render_template('login.html')
 
         if check_password_hash(user.password_hash, password):
-            # Guardar datos en la sesión
-
-        if check_password_hash(user.password_hash, password):
-            # Guardar datos en la sesión
+            # Guardar datos en la sesión 
             session['user_id'] = user.id
             session['tipo_user'] = user.tipo_usuario_id
             session['provincia_nombre'] = user.provincia_nombre
@@ -86,14 +83,6 @@ def login():
 
     # GET: renderiza el formulario normal
     return render_template('login.html')
-
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    flash('Sesión cerrada correctamente.', 'success')
-    return redirect('/')
-
 
 @app.route('/logout')
 def logout():
@@ -372,11 +361,9 @@ def agregar_usuario():
             username=username,
             provincia_nombre=provincia,
             password_hash=generate_password_hash(password),
+            debe_cambiar_password=True,
             tipo_usuario=tipo_obj,
-            debe_cambiar_password=True
-            tipo_usuario=tipo_obj,
-            debe_cambiar_password=True
-        )
+            )
         return jsonify({"success": True, "msg": "Usuario agregado ✅"})
     except Exception as e:
         return jsonify({"success": False, "msg": f"Error: {str(e)}"})
