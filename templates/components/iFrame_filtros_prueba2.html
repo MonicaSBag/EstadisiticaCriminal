@@ -76,7 +76,7 @@
 <div class="container py-5">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">Estadísticas Delictivas - SNIC</h1>
+        <h1 class="mb-0">Panel de Gestión - Estadísticas Delictivas</h1>
         <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">Cerrar Sesión</a>
     </div>
 
@@ -104,7 +104,7 @@
 
         <div class="d-flex gap-2 mt-3">
             <button class="btn btn-success w-50" onclick="aplicarFiltros()">Consultar</button>
-            <button class="btn btn-secondary w-50" onclick="limpiarFiltros()">Limpiar filtros</button>
+            <button class="btn btn-primary w-50" onclick="limpiarFiltros()">Limpiar filtros</button>
             <button class="btn btn-primary w-50" onclick="abrirFormulario()">Agregar nuevo registro</button>
             <button class="btn btn-danger w-50" onclick="abrirEliminar()">Eliminar registro existente</button>
         </div>
@@ -128,17 +128,18 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Provincia</label>
-                    <select id="eliminarProvincia" class="form-select">
-                        <option value="">Todas</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
                     <label class="form-label">Año</label>
                     <select id="eliminarAnio" class="form-select">
                         <option value="">Todos</option>
                     </select>
                 </div>
+                <div class="col-md-4">
+                    <label class="form-label">Provincia</label>
+                    <select id="eliminarProvincia" class="form-select">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                
             </div>
             <div class="d-flex gap-2 mt-4">
                 <button class="btn btn-success flex-grow-1" onclick="operacionEliminarBuscar()">🔍 Buscar</button>
@@ -191,7 +192,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Año *</label>
-                        <input type="number" id="agregarAnio" class="form-control" min="1900" max="2099" required>
+                        <input type="number" id="agregarAnio" class="form-control" required>
                     </div>
                 </div>
 
@@ -274,9 +275,10 @@
                 </tr>
                 {% endfor %}
             </tbody>
+            
         </table>
-
         <p>Total registros: <strong id="totalTabla">{{ data|length }}</strong></p>
+        <div id="paginacion" class="d-flex gap-2 mt-2"></div>
     </div>
 
     <!-- GRÁFICO -->
@@ -289,97 +291,53 @@
 <div id="alertContainer"></div>
 
 <script>
+// ========================================
+// CONFIGURACIÓN Y VARIABLES GLOBALES
+// ========================================
+const CONFIG = {
+    limite: 50,
+    paginaActual: 1
+};
+
+let registroActual = null;
+let datosCargados = [];
+
+// ========================================
+// INICIALIZACIÓN
+// ========================================
 async function cargarFiltros() {
-    const res = await fetch('/filtros2');   // solo para filtros generales
+    const res = await fetch('/filtros2');
     const data = await res.json();
 
-    const llenarSelect = (id, valores, placeholder) => {
-        const select = document.getElementById(id);
-        select.innerHTML = `<option value="">${placeholder}</option>`;
-        valores.forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v;
-            opt.textContent = v;
-            select.appendChild(opt);
-        });
-    };
-
-    // ✅ Solo filtros generales
     llenarSelect('provincia', data.provincias, 'Todas');
     llenarSelect('anio', data.anio, 'Todos');
     llenarSelect('codigo_delito_snic_nombre', data.codigo_delito_snic_nombre, 'Todos');
 }
 
 async function cargarOpcionesFormulario() {
-    const res = await fetch('/filtros');   // este endpoint ya limita por usuario
+    const res = await fetch('/filtros');
     const data = await res.json();
 
-    // Provincias en agregar
-    const selectProvincia = document.getElementById('agregarProvincia');
-    selectProvincia.innerHTML = '<option value="">Seleccione...</option>';
-    data.provincias.forEach(p => {
-        const option = document.createElement('option');
-        option.value = p;
-        option.textContent = p;
-        selectProvincia.appendChild(option);
-    });
+    llenarSelect('agregarProvincia', data.provincias, 'Seleccione...');
+    llenarSelect('agregarDelito', data.codigo_delito_snic_nombre, 'Seleccione...');
+    llenarSelect('eliminarProvincia', data.provincias, 'Todas');
+    llenarSelect('eliminarDelito', data.codigo_delito_snic_nombre, 'Todos');
+    llenarSelect('eliminarAnio', data.anio, 'Todos');
+}
 
-    // Delitos en agregar
-    const selectDelito = document.getElementById('agregarDelito');
-    selectDelito.innerHTML = '<option value="">Seleccione...</option>';
-    data.codigo_delito_snic_nombre.forEach(d => {
-        const option = document.createElement('option');
-        option.value = d;
-        option.textContent = d;
-        selectDelito.appendChild(option);
-    });
-
-    // Provincias en eliminar
-    const selectProvinciaEliminar = document.getElementById('eliminarProvincia');
-    selectProvinciaEliminar.innerHTML = '<option value="">Todas</option>';
-    data.provincias.forEach(p => {
-        const option = document.createElement('option');
-        option.value = p;
-        option.textContent = p;
-        selectProvinciaEliminar.appendChild(option);
-    });
-
-    // Delitos en eliminar
-    const selectDelitoEliminar = document.getElementById('eliminarDelito');
-    selectDelitoEliminar.innerHTML = '<option value="">Todos</option>';
-    data.codigo_delito_snic_nombre.forEach(d => {
-        const option = document.createElement('option');
-        option.value = d;
-        option.textContent = d;
-        selectDelitoEliminar.appendChild(option);
-    });
-
-    // Años en eliminar
-    const selectAnioEliminar = document.getElementById('eliminarAnio');
-    selectAnioEliminar.innerHTML = '<option value="">Todos</option>';
-    data.anio.forEach(a => {
-        const option = document.createElement('option');
-        option.value = a;
-        option.textContent = a;
-        selectAnioEliminar.appendChild(option);
+function llenarSelect(id, valores, placeholder) {
+    const select = document.getElementById(id);
+    select.innerHTML = `<option value="">${placeholder}</option>`;
+    valores.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        select.appendChild(opt);
     });
 }
-document.addEventListener('DOMContentLoaded', function() {
-    cargarFiltros();            // filtros generales → todas las provincias
-    cargarOpcionesFormulario(); // agregar/eliminar → provincia del usuario
-    configurarAutocompletado();
-});
-document.addEventListener('DOMContentLoaded', function() {
-    cargarOpcionesFormulario();
-    cargarOpcionesEliminar();
-    configurarAutocompletado();
-});
 
-
-// ✅ AUTOCOMPLETADO de víctimas y hechos
 function configurarAutocompletado() {
     const camposVictimas = ['agregarVictimasMasc', 'agregarVictimasFem', 'agregarVictimasSd'];
-    
     camposVictimas.forEach(id => {
         document.getElementById(id).addEventListener('input', actualizarTotales);
     });
@@ -389,18 +347,45 @@ function actualizarTotales() {
     const masc = parseInt(document.getElementById('agregarVictimasMasc').value) || 0;
     const fem = parseInt(document.getElementById('agregarVictimasFem').value) || 0;
     const sd = parseInt(document.getElementById('agregarVictimasSd').value) || 0;
-    
-    const totalVictimas = masc + fem + sd;
-    
-    // Actualizar solo el campo de víctimas
-    document.getElementById('agregarVictimas').value = totalVictimas;
+    document.getElementById('agregarVictimas').value = masc + fem + sd;
 }
 
-// ✅ MOSTRAR/OCULTAR FORMULARIO
+function configurarAnio() {
+    const campoAnio = document.getElementById('agregarAnio');
+    const anioActual = new Date().getFullYear();
+    campoAnio.min = anioActual - 3;
+    campoAnio.max = anioActual + 3;
+    campoAnio.value = anioActual;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    cargarFiltros();
+    cargarOpcionesFormulario();
+    configurarAutocompletado();
+    configurarAnio();
+});
+
+// ========================================
+// SISTEMA DE ALERTAS
+// ========================================
+function mostrarAlerta(mensaje, tipo = 'info') {
+    const container = document.getElementById('alertContainer');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${tipo} alert-dismissible fade show`;
+    alert.innerHTML = `
+        ${mensaje}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    container.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+// ========================================
+// FORMULARIO AGREGAR
+// ========================================
 function abrirFormulario() {
-    const formulario = document.getElementById('agregar');
-    formulario.classList.add('show');
-    formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('agregar').classList.add('show');
+    cerrarEliminar();
 }
 
 function cerrarFormulario() {
@@ -411,108 +396,59 @@ function resetearFormulario() {
     document.getElementById('formAgregar').reset();
     document.getElementById('agregarVictimas').value = 0;
     document.getElementById('agregarHechos').value = 0;
+    configurarAnio();
 }
 
-// ✅ SISTEMA DE ALERTAS
-function mostrarAlerta(mensaje, tipo = 'info') {
-    const container = document.getElementById('alertContainer');
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${tipo} alert-dismissible fade show`;
-    alert.innerHTML = `
-        ${mensaje}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    container.appendChild(alert);
-    
-    setTimeout(() => {
-        alert.remove();
-    }, 5000);
-}
-
-// ✅ BÚSQUEDA
-const tabla = document.querySelector("#tablaDelitos tbody");
-document.getElementById("busqueda").addEventListener("keyup", function() {
-    let filtro = this.value.toLowerCase();
-    let filas = tabla.querySelectorAll("tr");
-    filas.forEach(f =>
-        f.style.display = f.innerText.toLowerCase().includes(filtro) ? "" : "none"
-    );
-});
-
-// ✅ FILTROS → Actualiza tabla + gráfico
-async function aplicarFiltros() {
-    const filtros = {
-        provincia: document.getElementById("provincia").value,
-        anio: document.getElementById("anio").value,
-        delito: document.getElementById("codigo_delito_snic_nombre").value
+function confirmarAgregar() {
+    const datos = {
+        delito: document.getElementById('agregarDelito').value,
+        provincia: document.getElementById('agregarProvincia').value,
+        anio: document.getElementById('agregarAnio').value,
+        hechos: document.getElementById('agregarHechos').value,
+        victimas: document.getElementById('agregarVictimas').value,
+        victimasMasc: document.getElementById('agregarVictimasMasc').value,
+        victimasFem: document.getElementById('agregarVictimasFem').value,
+        victimasSd: document.getElementById('agregarVictimasSd').value
     };
 
-    const res = await fetch("/filtrar", {
-        method:"POST",
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(filtros)
-    });
-
-    const data = await res.json();
-    actualizarTabla(data.datos);
-    drawChart(filtros);
-}
-
-function limpiarFiltros() {
-    document.getElementById("provincia").value = "";
-    document.getElementById("anio").value = "";
-    document.getElementById("codigo_delito_snic_nombre").value = "";
-    aplicarFiltros();
-}
-
-// ✅ CONFIRMAR Y AGREGAR REGISTRO
-function confirmarAgregar() {
-    const delito = document.getElementById('agregarDelito').value;
-    const provincia = document.getElementById('agregarProvincia').value;
-    const anio = document.getElementById('agregarAnio').value;
-    const hechos = document.getElementById('agregarHechos').value;
-    const victimas = document.getElementById('agregarVictimas').value;
-    const victimasMasc = document.getElementById('agregarVictimasMasc').value;
-    const victimasFem = document.getElementById('agregarVictimasFem').value;
-    const victimasSd = document.getElementById('agregarVictimasSd').value;
-
-    if (!delito || !provincia || !anio || !hechos || !victimas || victimasMasc === '' || victimasFem === '' || victimasSd === '') {
+    if (!datos.delito || !datos.provincia || !datos.anio || !datos.hechos || 
+        datos.victimasMasc === '' || datos.victimasFem === '' || datos.victimasSd === '') {
         mostrarAlerta('⚠️ Todos los campos marcados con * son obligatorios', 'warning');
         return;
     }
 
     const resumen = `Confirma la carga de los siguientes datos:
 
-Delito: ${delito}
-Provincia: ${provincia}
-Año: ${anio}
-Hechos: ${hechos}
-Víctimas: ${victimas}
-Víctimas Masculinas: ${victimasMasc}
-Víctimas Femeninas: ${victimasFem}
-Víctimas Sin Identificar: ${victimasSd}
+Delito: ${datos.delito}
+Provincia: ${datos.provincia}
+Año: ${datos.anio}
+Hechos: ${datos.hechos}
+Víctimas: ${datos.victimas}
+Víctimas Masculinas: ${datos.victimasMasc}
+Víctimas Femeninas: ${datos.victimasFem}
+Víctimas Sin Identificar: ${datos.victimasSd}
 
 ¿Desea continuar?`;
 
     if (confirm(resumen)) {
-        ejecutarAgregar(delito, provincia, anio, hechos, victimas, victimasMasc, victimasFem, victimasSd);
+        ejecutarAgregar(datos);
     }
 }
 
-async function ejecutarAgregar(delito, provincia, anio, hechos, victimas, victimasMasc, victimasFem, victimasSd) {
+async function ejecutarAgregar(datos) {
     try {
         const res = await fetch('/abm/agregar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                delito,
-                provincia,
-                anio,
-                cantidad_hechos: hechos,
-                cantidad_victimas: victimas,
-                cantidad_victimas_masc: victimasMasc,
-                cantidad_victimas_fem: victimasFem,
-                cantidad_victimas_sd: victimasSd
+                delito: datos.delito,
+                provincia: datos.provincia,
+                anio: datos.anio,
+                cantidad_hechos: datos.hechos,
+                cantidad_victimas: datos.victimas,
+                cantidad_victimas_masc: datos.victimasMasc,
+                cantidad_victimas_fem: datos.victimasFem,
+                cantidad_victimas_sd: datos.victimasSd
             })
         });
 
@@ -522,7 +458,6 @@ async function ejecutarAgregar(delito, provincia, anio, hechos, victimas, victim
             mostrarAlerta('✅ ' + data.msg, 'success');
             resetearFormulario();
             cerrarFormulario();
-            // Recargar datos
             aplicarFiltros();
         } else {
             mostrarAlerta('❌ ' + data.msg, 'danger');
@@ -532,20 +467,12 @@ async function ejecutarAgregar(delito, provincia, anio, hechos, victimas, victim
     }
 }
 
-// ✅ ELIMINAR REGISTRO (placeholder)
-function eliminarRegistro() {
-    mostrarAlerta('⚠️ Función de eliminación en desarrollo', 'info');
-}
-
 // ========================================
-// ✅ OPERACIÓN ELIMINAR REGISTRO COMPLETO
+// FORMULARIO ELIMINAR
 // ========================================
-
 function abrirEliminar() {
-    const formulario = document.getElementById('eliminar');
-    formulario.classList.add('show');
-    formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    cerrarFormulario(); // Cerrar formulario de agregar si está abierto
+    document.getElementById('eliminar').classList.add('show');
+    cerrarFormulario();
 }
 
 function cerrarEliminar() {
@@ -554,15 +481,17 @@ function cerrarEliminar() {
 }
 
 async function operacionEliminarBuscar() {
-    const delito = document.getElementById('eliminarDelito').value;
-    const provincia = document.getElementById('eliminarProvincia').value;
-    const anio = document.getElementById('eliminarAnio').value;
+    const datos = {
+        delito: document.getElementById('eliminarDelito').value,
+        provincia: document.getElementById('eliminarProvincia').value,
+        anio: document.getElementById('eliminarAnio').value
+    };
 
     try {
         const res = await fetch('/abm/consultar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ delito, provincia, anio })
+            body: JSON.stringify(datos)
         });
 
         const data = await res.json();
@@ -590,7 +519,6 @@ function llenarTablaEliminar(datos) {
 
     tbody.innerHTML = '';
     thead.innerHTML = '';
-
     document.getElementById('totalEliminar').textContent = datos.length;
 
     if (datos.length === 0) {
@@ -598,26 +526,20 @@ function llenarTablaEliminar(datos) {
         return;
     }
 
-    // Crear encabezados
     const columnas = Object.keys(datos[0]);
     thead.innerHTML = '<tr>' + columnas.map(c => `<th>${c}</th>`).join('') + '</tr>';
 
-    // Crear filas
     datos.forEach((fila) => {
         const tr = document.createElement('tr');
         tr.innerHTML = columnas.map(c => `<td>${fila[c] ?? '-'}</td>`).join('');
         tr.style.cursor = 'pointer';
         
         tr.addEventListener('click', () => {
-            // Remover selección previa
             tbody.querySelectorAll('tr').forEach(row => row.classList.remove('selected'));
-            // Marcar fila seleccionada
             tr.classList.add('selected');
-            
             registroActual = fila;
             mostrarResumenRegistro(fila);
             document.getElementById('formEliminar').style.display = 'block';
-            document.getElementById('formEliminar').scrollIntoView({ behavior: 'smooth' });
         });
         
         tbody.appendChild(tr);
@@ -629,11 +551,11 @@ function mostrarResumenRegistro(registro) {
     resumen.innerHTML = `
         <ul class="mb-0">
             <li><strong>ID:</strong> ${registro.id || 'N/A'}</li>
-            <li><strong>Provincia:</strong> ${registro.provincia || 'N/A'}</li>
-            <li><strong>Año:</strong> ${registro.anio_hecho || 'N/A'}</li>
+            <li><strong>Provincia:</strong> ${registro.provincia_nombre || 'N/A'}</li>
+            <li><strong>Año:</strong> ${registro.anio || 'N/A'}</li>
             <li><strong>Delito:</strong> ${registro.codigo_delito_snic_nombre || 'N/A'}</li>
-            <li><strong>Cantidad de Hechos:</strong> ${registro.cantidad_hechos || 0}</li>
-            <li><strong>Cantidad de Víctimas:</strong> ${registro.cantidad_victimas || 0}</li>
+            <li><strong>Hechos:</strong> ${registro.cantidad_hechos || 0}</li>
+            <li><strong>Víctimas:</strong> ${registro.cantidad_victimas || 0}</li>
         </ul>
     `;
 }
@@ -644,11 +566,8 @@ function procesarEliminacion() {
         return;
     }
 
-    const confirmacion = `⚠️ CONFIRMACIÓN DE ELIMINACIÓN\n\nEstá a punto de ELIMINAR PERMANENTEMENTE el siguiente registro:\n\nID: ${registroActual.id}\nProvincia: ${registroActual.provincia}\nAño: ${registroActual.anio_hecho}\nDelito: ${registroActual.codigo_delito_snic_nombre}\n\n¿Desea continuar?`;
-
-    if (confirm(confirmacion)) {
-        const confirmFinal = confirm('⚠️⚠️ SEGUNDA CONFIRMACIÓN ⚠️⚠️\n\nEsta acción NO se puede deshacer.\n¿Está COMPLETAMENTE SEGURO de eliminar este registro?');
-        if (confirmFinal) {
+    if (confirm(`⚠️ ¿Eliminar el registro ID ${registroActual.id}?\n\nEsta acción no se puede deshacer.`)) {
+        if (confirm('⚠️⚠️ CONFIRMACIÓN FINAL ⚠️⚠️\n\n¿Está COMPLETAMENTE SEGURO?')) {
             ejecutarEliminacionCompleta();
         }
     }
@@ -657,17 +576,15 @@ function procesarEliminacion() {
 async function ejecutarEliminacionCompleta() {
     try {
         const res = await fetch(`/abm/eliminar/${registroActual.id}`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }
+            method: 'DELETE'
         });
 
         const data = await res.json();
 
         if (data.success) {
-            mostrarAlerta('✅ ' + (data.msg || 'Registro eliminado exitosamente'), 'success');
+            mostrarAlerta('✅ ' + (data.msg || 'Registro eliminado'), 'success');
             limpiarEliminar();
             cerrarEliminar();
-            // Actualizar tabla principal
             aplicarFiltros();
         } else {
             mostrarAlerta('❌ ' + (data.msg || 'Error al eliminar'), 'danger');
@@ -694,38 +611,99 @@ function limpiarEliminar() {
     registroActual = null;
 }
 
-// ✅ TABLA REACTIVA
+// ========================================
+// FILTROS Y TABLA
+// ========================================
+async function aplicarFiltros() {
+    const filtros = {
+        provincia: document.getElementById("provincia").value,
+        anio: document.getElementById("anio").value,
+        delito: document.getElementById("codigo_delito_snic_nombre").value
+    };
+
+    const res = await fetch("/filtrar", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(filtros)
+    });
+
+    const data = await res.json();
+    datosCargados = data.datos;
+    actualizarTabla(datosCargados);
+    drawChart(filtros);
+}
+
+function limpiarFiltros() {
+    document.getElementById("provincia").value = "";
+    document.getElementById("anio").value = "";
+    document.getElementById("codigo_delito_snic_nombre").value = "";
+    document.querySelector("#tablaDelitos tbody").innerHTML = "";
+    document.getElementById("totalTabla").innerText = "0";
+    document.getElementById("paginacion").innerHTML = "";
+    drawChart({});
+}
+
 function actualizarTabla(datos) {
-    tabla.innerHTML = "";
-    datos.forEach(row =>{
-        tabla.innerHTML += `
+    const tbody = document.querySelector("#tablaDelitos tbody");
+    const inicio = (CONFIG.paginaActual - 1) * CONFIG.limite;
+    const fin = inicio + CONFIG.limite;
+    const datosPagina = datos.slice(inicio, fin);
+
+    tbody.innerHTML = datosPagina.map(row => `
         <tr>
             <td>${row.provincia_nombre}</td>
             <td>${row.anio}</td>
             <td>${row.codigo_delito_snic_nombre}</td>
             <td>${row.cantidad_hechos}</td>
-        </tr>`;
-    });
+        </tr>
+    `).join('');
+
     document.getElementById("totalTabla").innerText = datos.length;
+    dibujarPaginacion(datos.length);
 }
 
-// ✅ GOOGLE CHART
-google.charts.load("current", {packages:["corechart"]});
+function dibujarPaginacion(totalRegistros) {
+    const contenedor = document.getElementById("paginacion");
+    const totalPaginas = Math.ceil(totalRegistros / CONFIG.limite);
+
+    contenedor.innerHTML = '';
+    for (let i = 1; i <= totalPaginas; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        btn.className = `btn btn-sm ${i === CONFIG.paginaActual ? "btn-warning" : "btn-outline-light"}`;
+        btn.onclick = () => {
+            CONFIG.paginaActual = i;
+            actualizarTabla(datosCargados);
+        };
+        contenedor.appendChild(btn);
+    }
+}
+
+// BÚSQUEDA
+document.getElementById("busqueda").addEventListener("keyup", function() {
+    const filtro = this.value.toLowerCase();
+    const filas = document.querySelectorAll("#tablaDelitos tbody tr");
+    filas.forEach(f => {
+        f.style.display = f.innerText.toLowerCase().includes(filtro) ? "" : "none";
+    });
+});
+
+// ========================================
+// GRÁFICO
+// ========================================
+google.charts.load("current", { packages: ["corechart"] });
 google.charts.setOnLoadCallback(() => drawChart());
 
 async function drawChart(filtros = {}) {
     const res = await fetch("/estadisticas", {
-        method:"POST",
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(filtros)
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(filtros)
     });
 
     const data = await res.json();
-
     const chartData = [["Tipo Delito", "Total"]];
-    data.forEach(row =>
-        chartData.push([row.codigo_delito_snic_nombre, row.total])
-    );
+    data.forEach(row => chartData.push([row.codigo_delito_snic_nombre, row.cantidad]));
 
     const dataTable = google.visualization.arrayToDataTable(chartData);
     const chart = new google.visualization.ColumnChart(document.getElementById("grafico"));

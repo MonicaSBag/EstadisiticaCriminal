@@ -1,12 +1,12 @@
 import pandas as pd
 from peewee import *
 import os
+
 # MODELO ORM
 sqlite_db = SqliteDatabase('data/estadistica_criminal.db')
 
-# Se crea la base de datos o lee si ya existe
 def crear_db():
-    #Crea el directorio data/ si no existe y conecta a la base de datos
+    """Crea el directorio data/ si no existe y conecta a la base de datos"""
     os.makedirs('data', exist_ok=True)
     sqlite_db.connect(reuse_if_open=True)
     print("Base de datos conectada.")
@@ -39,79 +39,66 @@ class Provincia(BaseModel):
     id = AutoField()
     provincia_id = IntegerField()
     provincia_nombre = CharField(max_length=50)
-    latitud = FloatField(null=False)
-    longitud = FloatField(null=False)
+    latitud = FloatField()
+    longitud = FloatField()
 
-
-@staticmethod
 def crear_tabla():
-    #Crear tabla si no existe
-    ##safe=True evita error si la tabla ya existe
-    sqlite_db.create_tables([EstadisticasDelitos], safe=True)
-    sqlite_db.create_tables([Provincia], safe=True)
-
+    """Crear tablas si no existen"""
+    sqlite_db.create_tables([EstadisticasDelitos, Provincia], safe=True)
     print("Tablas creadas o ya existentes.")
 
-@staticmethod
-def cargar_archivo():
-    #Se lee el archivo xlsx y se cargan los datos (solo si la tabla está vacía)
-    try:
-        # Verificar si ya hay datos para evitar duplicados
-        cantidad_existente = EstadisticasDelitos.select().count()
-        
-        if cantidad_existente > 0:
-            print(f"La tabla ya contiene {cantidad_existente} registros. No se cargarán datos.")
-            return
+def _buscar_archivo(nombre_archivo):
+    """Busca el archivo en el directorio actual o en el directorio padre"""
+    if os.path.exists(nombre_archivo):
+        return nombre_archivo
+    archivo_padre = f"../{nombre_archivo}"
+    if os.path.exists(archivo_padre):
+        return archivo_padre
+    return None
+
+def _cargar_delitos():
+    """Carga datos de delitos desde archivo Excel"""
+    cantidad_existente = EstadisticasDelitos.select().count()
     
-        # Verificar que el archivo existe
-        archivo = "snic-provincias.xlsx"
-        if not os.path.exists(archivo):
-            archivo = "../snic-provincias.xlsx"
-        if not os.path.exists(archivo):
-            print(f"No se encontró el archivo '{archivo}'")
-            return
-        
-        # Leer el archivo xlsx
-        df = pd.read_excel(archivo)
-        
-        # Cargar datos en la base de datos
-        with sqlite_db.atomic():
-            for _, row in df.iterrows():
-                EstadisticasDelitos.create(**row.to_dict())
+    if cantidad_existente > 0:
+        print(f"La tabla de delitos ya contiene {cantidad_existente} registros. No se cargarán datos.")
+        return
     
-        print(f"{len(df)} registros cargados desde '{archivo}'.")
-        
-    except Exception as e:
-        print(f"Error al cargar el archivo de delitos: {e}")
-        raise
-        # Verificar si ya hay datos para evitar duplicados
+    archivo = _buscar_archivo("snic-provincias.xlsx")
+    if not archivo:
+        print("No se encontró el archivo 'snic-provincias.xlsx'")
+        return
+    
+    df = pd.read_excel(archivo)
+    
+    with sqlite_db.atomic():
+        for _, row in df.iterrows():
+            EstadisticasDelitos.create(**row.to_dict())
+    
+    print(f"{len(df)} registros de delitos cargados desde '{archivo}'.")
+
+def _cargar_provincias():
+    """Carga datos de provincias desde archivo Excel"""
     cantidad_existente = Provincia.select().count()
     
     if cantidad_existente > 0:
-        print(f"La tabla ya contiene {cantidad_existente} registros. No se cargarán datos.")
+        print(f"La tabla de provincias ya contiene {cantidad_existente} registros. No se cargarán datos.")
         return
     
-    # Verificar que el archivo existe
-    archivo = "provincias_ubicacion.xlsx"
-    if not os.path.exists(archivo):
-        archivo = "../provincias_ubicacion.xlsx"
-    if not os.path.exists(archivo):
-        print(f"No se encontró el archivo '{archivo}'")
+    archivo = _buscar_archivo("provincias_ubicacion.xlsx")
+    if not archivo:
+        print("No se encontró el archivo 'provincias_ubicacion.xlsx'")
         return
     
-    # Leer el archivo xlsx
     df = pd.read_excel(archivo)
     
-    # Validar que las columnas necesarias existen
     columnas_requeridas = {'provincia_id', 'provincia_nombre', 'latitud', 'longitud'}
     if not columnas_requeridas.issubset(df.columns):
         print(f"Faltan columnas requeridas: {columnas_requeridas - set(df.columns)}")
         return
 
-    # Eliminar filas con latitud o longitud faltante
     df = df.dropna(subset=['latitud', 'longitud'])
 
-    # Cargar en la base de datos
     with sqlite_db.atomic():
         for _, row in df.iterrows():
             Provincia.create(
@@ -120,4 +107,14 @@ def cargar_archivo():
                 latitud=float(row['latitud']),
                 longitud=float(row['longitud'])
             )
+    
     print(f"{len(df)} provincias cargadas correctamente.")
+
+def cargar_archivo():
+    """Carga todos los archivos de datos necesarios"""
+    try:
+        _cargar_delitos()
+        _cargar_provincias()
+    except Exception as e:
+        print(f"Error al cargar archivos: {e}")
+        raise
