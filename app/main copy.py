@@ -256,6 +256,24 @@ def nuevo_registro():
     except:
         flash(f"Error al agregar el registro: {str()}", "danger")
        
+@app.route("/eliminar-registro", methods=["POST", "GET"])
+@login_required
+def eliminar_registro():
+    id_registro = request.form.get('registro_a_eliminar')
+    provincia = session.get("provincia_nombre")
+    try:
+        registro = EstadisticasDelitos.get(
+        (EstadisticasDelitos.id == id_registro) &
+        (EstadisticasDelitos.provincia_nombre == provincia)
+        )
+        registro.delete_instance()
+        flash("Registro eliminado correctamente.", "success")
+    except EstadisticasDelitos.DoesNotExist:
+        flash("No se elimino el registro seleccionado. Usuario restringido.", "warning")
+    except Exception as e:
+        flash(f"Error al eliminar el registro: {str(e)}", "danger")
+    return redirect("/dashboard-private")
+
 @app.route('/consultar-registro', methods=['POST'])
 def consultar_registro():
     id_registro = request.json.get('registro_id')
@@ -460,224 +478,6 @@ def cambiar_password_primera_vez():
     # GET: mostrar el formulario para cambiar la contraseña
     return render_template('cambiar_password_primera_vez.html', user=user)
 
-# 🔹 NUEVOS ENDPOINTS PARA ABM AVANZADO (CONSULTAR, AGREGAR, MODIFICAR, ELIMINAR)
-
-def calcular_tasas(cantidad_hechos, cantidad_victimas, cantidad_victimas_masc, cantidad_victimas_fem):
-    """Calcula las tasas basadas en las cantidades ingresadas"""
-    # Para este ejemplo, usamos fórmulas simples
-    # Las tasas reales podrían requerir información de población
-    tasa_hechos = cantidad_hechos if cantidad_hechos > 0 else 0
-    tasa_victimas = cantidad_victimas if cantidad_victimas > 0 else 0
-    tasa_victimas_masc = cantidad_victimas_masc if cantidad_victimas_masc > 0 else 0
-    tasa_victimas_fem = cantidad_victimas_fem if cantidad_victimas_fem > 0 else 0
-    
-    return {
-        'tasa_hechos': tasa_hechos,
-        'tasa_victimas': tasa_victimas,
-        'tasa_victimas_masc': tasa_victimas_masc,
-        'tasa_victimas_fem': tasa_victimas_fem
-    }
-
-@app.route('/abm/consultar', methods=["POST"])
-@login_required
-def abm_consultar():
-    """Consultar registros con filtros avanzados"""
-    filtros = request.get_json()
-    provincia = filtros.get('provincia')
-    anio = filtros.get('anio')
-    delito = filtros.get('delito')
-    
-    tipo_user = session.get('tipo_user')
-    
-    # Si no es superusuario, limitar por provincia
-    if tipo_user != 1:
-        provincia_sesion = session.get('provincia_nombre')
-        if provincia and provincia != provincia_sesion:
-            return jsonify({"success": False, "msg": "Acceso denegado a esa provincia", "datos": []})
-        provincia = provincia_sesion
-    
-    conn = obtener_conexion_dataset()
-    cursor = conn.cursor()
-    
-    query = "SELECT * FROM estadisticasdelitos WHERE 1=1"
-    params = []
-    
-    if provincia:
-        query += " AND provincia_nombre = ?"
-        params.append(provincia)
-    if anio:
-        query += " AND anio = ?"
-        params.append(anio)
-    if delito:
-        query += " AND codigo_delito_snic_nombre = ?"
-        params.append(delito)
-    
-    cursor.execute(query, params)
-    filas = cursor.fetchall()
-    columnas = [desc[0] for desc in cursor.description]
-    
-    datos = [dict(zip(columnas, fila)) for fila in filas]
-    
-    conn.close()
-    
-    return jsonify({
-        "success": True,
-        "total": len(datos),
-        "datos": datos
-    })
-
-@app.route('/abm/agregar', methods=["POST"])
-@login_required
-def abm_agregar():
-    """Agregar nuevo registro con cálculo automático de tasas"""
-    tipo_user = session.get('tipo_user')
-    provincia_sesion = session.get('provincia_nombre')
-    
-    data = request.get_json()
-    
-    # Validaciones
-    campos_requeridos = ['provincia', 'anio', 'delito', 'cantidad_hechos', 
-                         'cantidad_victimas', 'cantidad_victimas_masc', 
-                         'cantidad_victimas_fem', 'cantidad_victimas_sd']
-    
-    for campo in campos_requeridos:
-        if campo not in data or data[campo] == '' or data[campo] is None:
-            return jsonify({"success": False, "msg": f"Campo requerido: {campo}"})
-    
-    # Validar que sean números
-    try:
-        cantidad_hechos = int(data['cantidad_hechos'])
-        cantidad_victimas = int(data['cantidad_victimas'])
-        cantidad_victimas_masc = int(data['cantidad_victimas_masc'])
-        cantidad_victimas_fem = int(data['cantidad_victimas_fem'])
-        cantidad_victimas_sd = int(data['cantidad_victimas_sd'])
-    except ValueError:
-        return jsonify({"success": False, "msg": "Todos los campos numéricos deben ser números"})
-    
-    # Si no es superusuario, verificar provincia
-    if tipo_user != 1 and data['provincia'] != provincia_sesion:
-        return jsonify({"success": False, "msg": "Acceso denegado a esa provincia"})
-    
-    try:
-        registro_provincia = Provincia.get(Provincia.provincia_nombre == data['provincia'])
-        registro_delito = EstadisticasDelitos.get(EstadisticasDelitos.codigo_delito_snic_nombre == data['delito'])
-        
-        # Calcular tasas
-        tasas = calcular_tasas(cantidad_hechos, cantidad_victimas, cantidad_victimas_masc, cantidad_victimas_fem)
-        
-        EstadisticasDelitos.create(
-            codigo_delito_snic_id=registro_delito.codigo_delito_snic_id,
-            provincia_nombre=data['provincia'],
-            provincia_id=registro_provincia.provincia_id,
-            anio=data['anio'],
-            codigo_delito_snic_nombre=data['delito'],
-            cantidad_hechos=cantidad_hechos,
-            cantidad_victimas=cantidad_victimas,
-            cantidad_victimas_masc=cantidad_victimas_masc,
-            cantidad_victimas_fem=cantidad_victimas_fem,
-            cantidad_victimas_sd=cantidad_victimas_sd,
-            tasa_hechos=tasas['tasa_hechos'],
-            tasa_victimas=tasas['tasa_victimas'],
-            tasa_victimas_masc=tasas['tasa_victimas_masc'],
-            tasa_victimas_fem=tasas['tasa_victimas_fem']
-        )
-        
-        return jsonify({"success": True, "msg": "Registro agregado correctamente ✅"})
-    except Exception as e:
-        return jsonify({"success": False, "msg": f"Error: {str(e)}"})
-
-@app.route('/abm/modificar/<int:id>', methods=["POST"])
-@login_required
-def abm_modificar(id):
-    """Modificar campos específicos de un registro"""
-    tipo_user = session.get('tipo_user')
-    provincia_sesion = session.get('provincia_nombre')
-    
-    data = request.get_json()
-    
-    try:
-        registro = EstadisticasDelitos.get_by_id(id)
-        
-        # Si no es superusuario, verificar provincia
-        if tipo_user != 1 and registro.provincia_nombre != provincia_sesion:
-            return jsonify({"success": False, "msg": "Acceso denegado a ese registro"})
-        
-        # Campos modificables
-        campos_modificables = {
-            'cantidad_victimas': 'cantidad_victimas',
-            'cantidad_victimas_masc': 'cantidad_victimas_masc',
-            'cantidad_victimas_fem': 'cantidad_victimas_fem',
-            'cantidad_victimas_sd': 'cantidad_victimas_sd'
-        }
-        
-        modificado = False
-        for campo_entrada, campo_modelo in campos_modificables.items():
-            if campo_entrada in data and data[campo_entrada] != '':
-                try:
-                    setattr(registro, campo_modelo, int(data[campo_entrada]))
-                    modificado = True
-                except ValueError:
-                    return jsonify({"success": False, "msg": f"{campo_entrada} debe ser un número"})
-        
-        if not modificado:
-            return jsonify({"success": False, "msg": "No hay campos para modificar"})
-        
-        # Recalcular tasas
-        tasas = calcular_tasas(
-            registro.cantidad_hechos,
-            registro.cantidad_victimas,
-            registro.cantidad_victimas_masc,
-            registro.cantidad_victimas_fem
-        )
-        
-        registro.tasa_hechos = tasas['tasa_hechos']
-        registro.tasa_victimas = tasas['tasa_victimas']
-        registro.tasa_victimas_masc = tasas['tasa_victimas_masc']
-        registro.tasa_victimas_fem = tasas['tasa_victimas_fem']
-        
-        registro.save()
-        
-        return jsonify({"success": True, "msg": "Registro modificado correctamente ✅"})
-    except EstadisticasDelitos.DoesNotExist:
-        return jsonify({"success": False, "msg": "Registro no encontrado"})
-    except Exception as e:
-        return jsonify({"success": False, "msg": f"Error: {str(e)}"})
-
-@app.route('/abm/eliminar/<int:id>', methods=["DELETE"])
-@login_required
-def abm_eliminar(id):
-    """Eliminar un registro completo de la base de datos"""
-    tipo_user = session.get('tipo_user')
-    provincia_sesion = session.get('provincia_nombre')
-    
-    try:
-        registro = EstadisticasDelitos.get_by_id(id)
-        
-        # Si no es superusuario, verificar provincia
-        if tipo_user != 1 and registro.provincia_nombre != provincia_sesion:
-            return jsonify({"success": False, "msg": "Acceso denegado a ese registro"})
-        
-        # Guardar información del registro antes de eliminarlo (para el log)
-        info_registro = {
-            'provincia': registro.provincia_nombre,
-            'anio': registro.anio,
-            'delito': registro.codigo_delito_snic_nombre
-        }
-        
-        # ELIMINAR EL REGISTRO COMPLETO
-        registro.delete_instance()
-        
-        return jsonify({
-            "success": True, 
-            "msg": f"Registro eliminado exitosamente ✅ (Provincia: {info_registro['provincia']}, Año: {info_registro['anio']}, Delito: {info_registro['delito']})"
-        })
-        
-    except EstadisticasDelitos.DoesNotExist:
-        return jsonify({"success": False, "msg": "Registro no encontrado"})
-    except Exception as e:
-        return jsonify({"success": False, "msg": f"Error al eliminar: {str(e)}"})
-
-
 
 if __name__ == "__main__":
     from user_database import crear_user_tabla, verificar_o_agregar_campo
@@ -685,13 +485,4 @@ if __name__ == "__main__":
     crear_user_tabla()             # 🔹 Crea las tablas si no existen
     verificar_o_agregar_campo()    # 🔹 Asegura que el campo exista
     app.run(debug=True)
-
-
-
-
-
-
-
-
-
 
