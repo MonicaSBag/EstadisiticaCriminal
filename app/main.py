@@ -110,30 +110,6 @@ def login_admin():
         return jsonify({"success": False, "msg": "Acceso denegado ❌ Solo el superAdmin puede ingresar."})
 
 
-"""@app.route('/register', methods=['GET', 'POST'])
-def register():
-    conn = obtener_conexion_user()
-    #cursor = conn.cursor()
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        if not username or not password:
-            flash('Ambos campos son requeridos.', 'danger')
-            return redirect(url_for('register'))
-        try:
-            if User.get(User.username == username):
-                flash('El usuario ya existe. Por favor, inicie sesión.', 'warning')
-                return redirect(url_for('login'))
-        except:
-            User.create(
-                username = username,
-                provincia_nombre = "",
-                password_hash = generate_password_hash(password) 
-            )    
-            flash('Registro exitoso. ¡Ahora puede iniciar sesión!', 'success')
-            return redirect(url_for('login'))
-    return render_template('register.html')"""
-
 @app.route('/filtros', methods=["GET"])
 @login_required
 def filtros():
