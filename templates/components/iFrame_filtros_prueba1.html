@@ -37,6 +37,55 @@
       padding: 10px;
       margin-top: 30px;
     }
+
+
+    .chart-container {
+      background: #2e2e42;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .chart-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #fff;
+      text-align: center;
+    }
+    .chart-wrapper {
+      background: #fff;
+      border-radius: 10px;
+      padding: 15px;
+      min-height: 400px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 25px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .stat-card h3 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 10px 0;
+    }
+    .stat-card p {
+      font-size: 0.95rem;
+      opacity: 0.9;
+      margin: 0;
+    }
+    .form-label {
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
   </style>
 
 </head>
@@ -44,10 +93,10 @@
 
   <div class="container">
 
-    <h1 class="text-center mb-4">Filtro de Provincias SNIC</h1>
+    <h1 class="text-center mb-4">Panel de Estadísticas Criminales</h1>
 
       <div class="mb-3 d-flex justify-content-end">
-        <a href="/" class="btn btn-outline-light">Volver a inicio</a>
+        <a href="/" class="btn btn-outline-light">← Volver a inicio</a>
       </div>
 
     <!-- ✅ Filtros dentro de una card -->
@@ -76,7 +125,98 @@
       </div>
 
     </div>
+    <!-- TARJETAS DE ESTADÍSTICAS GENERALES -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <p>Total Registros</p>
+        <h3 id="totalRegistros">0</h3>
+      </div>
+      <div class="stat-card">
+        <p>Total Hechos</p>
+        <h3 id="totalHechos">0</h3>
+      </div>
+      <div class="stat-card">
+        <p>Total Víctimas</p>
+        <h3 id="totalVictimas">0</h3>
+      </div>
+      <div class="stat-card">
+        <p>Provincias Analizadas</p>
+        <h3 id="totalProvincias">0</h3>
+      </div>
+    </div>
 
+    <!-- GRÁFICOS EN GRID -->
+    <div class="row">
+      <!-- Gráfico 1: Delitos por Tipo (Columnas) -->
+      <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+          <div class="chart-title">Delitos por Tipo</div>
+          <div class="chart-wrapper">
+            <div id="chartDelitosTipo" style="width:100%; height:380px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico 2: Top 10 Delitos (Barras Horizontales) -->
+      <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+          <div class="chart-title">Top 10 Delitos Más Frecuentes</div>
+          <div class="chart-wrapper">
+            <div id="chartTop10" style="width:100%; height:380px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico 3: Víctimas por Género (Pie) -->
+      <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+          <div class="chart-title">Distribución de Víctimas por Género</div>
+          <div class="chart-wrapper">
+            <div id="chartGenero" style="width:100%; height:380px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico 4: Delitos por Provincia (Geo Chart o Barras) -->
+      <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+          <div class="chart-title">Delitos por Provincia</div>
+          <div class="chart-wrapper">
+            <div id="chartProvincias" style="width:100%; height:380px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico 5: Evolución Temporal (Línea) -->
+      <div class="col-lg-12 mb-4">
+        <div class="chart-container">
+          <div class="chart-title">Evolución Temporal de Delitos</div>
+          <div class="chart-wrapper">
+            <div id="chartTemporal" style="width:100%; height:400px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico 6: Relación Hechos vs Víctimas (Scatter) -->
+      <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+          <div class="chart-title">Relación Hechos vs Víctimas</div>
+          <div class="chart-wrapper">
+            <div id="chartScatter" style="width:100%; height:380px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico 7: Comparativa Provincial (Área) -->
+      <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+          <div class="chart-title">Comparativa Provincial</div>
+          <div class="chart-wrapper">
+            <div id="chartArea" style="width:100%; height:380px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- ✅ Tabla con estilo -->
     <!-- Tabla -->
@@ -88,7 +228,8 @@
           <th>Provincia</th>
           <th>Año</th>
           <th>Tipo Delito</th>
-          <th>Total</th>
+          <th>Tota Hechos</th>
+          <th>Total Victimas</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -98,13 +239,8 @@
   </div>
 </div>
 
-    <!-- ✅ Gráfico Google Charts -->
-    <h2 class="mt-5">Gráfico de delitos por provincia</h2>
-    <div id="grafico" style="width: 100%; height: 400px;"></div>
-
   </div>
-
-  <script>
+<script>
     const API = {
       filtros: '/filtros2',
       filtrar: '/filtrar',
@@ -116,6 +252,11 @@
       paginaActual: 1
     };
 
+    let datosGlobales = [];
+
+    // ========================================
+    // INICIALIZACIÓN
+    // ========================================
     async function cargarFiltros() {
       const res = await fetch(API.filtros);
       const data = await res.json();
@@ -172,8 +313,22 @@
       });
       const data = await res.json();
 
-      actualizarTabla(data.datos);
-      drawChart(filtros);
+      datosGlobales = data.datos;
+      actualizarEstadisticas(datosGlobales);
+      actualizarTabla(datosGlobales);
+      drawAllCharts(filtros, datosGlobales);
+    }
+
+    function actualizarEstadisticas(datos) {
+      const totalRegistros = datos.length;
+      const totalHechos = datos.reduce((sum, d) => sum + (d.cantidad_hechos || 0), 0);
+      const totalVictimas = datos.reduce((sum, d) => sum + (d.cantidad_victimas || 0), 0);
+      const provinciasUnicas = new Set(datos.map(d => d.provincia_nombre)).size;
+
+      document.getElementById('totalRegistros').textContent = totalRegistros.toLocaleString();
+      document.getElementById('totalHechos').textContent = totalHechos.toLocaleString();
+      document.getElementById('totalVictimas').textContent = totalVictimas.toLocaleString();
+      document.getElementById('totalProvincias').textContent = provinciasUnicas;
     }
 
     function actualizarTabla(datos) {
@@ -187,7 +342,8 @@
           <td>${row.provincia_nombre}</td>
           <td>${row.anio}</td>
           <td>${row.codigo_delito_snic_nombre}</td>
-          <td>${row.cantidad_hechos}</td>
+          <td>${row.cantidad_hechos || 0}</td>
+          <td>${row.cantidad_victimas || 0}</td>
         </tr>
       `).join('');
 
@@ -200,48 +356,292 @@
       const totalPaginas = Math.ceil(totalRegistros / CONFIG.limite);
 
       contenedor.innerHTML = '';
-      for (let i = 1; i <= totalPaginas; i++) {
+
+      if (totalPaginas <= 1) return;
+
+      const crearBoton = (numero, esActivo = false) => {
         const btn = document.createElement("button");
-        btn.textContent = i;
-        btn.className = `btn btn-sm ${i === CONFIG.paginaActual ? "btn-warning" : "btn-outline-light"}`;
+        btn.textContent = numero;
+        btn.className = `btn btn-sm ${esActivo ? "btn-warning" : "btn-outline-light"}`;
         btn.onclick = () => {
-          CONFIG.paginaActual = i;
-          aplicarFiltros();
+          CONFIG.paginaActual = numero;
+          actualizarTabla(datosGlobales);
         };
-        contenedor.appendChild(btn);
+        return btn;
+      };
+
+      const crearPuntos = () => {
+        const span = document.createElement("span");
+        span.textContent = "...";
+        span.className = "px-2 text-light";
+        return span;
+      };
+
+      // Botón anterior
+      if (CONFIG.paginaActual > 1) {
+        const btnPrev = document.createElement("button");
+        btnPrev.textContent = "‹";
+        btnPrev.className = "btn btn-sm btn-outline-light";
+        btnPrev.onclick = () => {
+          CONFIG.paginaActual--;
+          actualizarTabla(datosGlobales);
+        };
+        contenedor.appendChild(btnPrev);
+      }
+
+      // Lógica de paginación inteligente
+      if (totalPaginas <= 7) {
+        // Mostrar todas las páginas si son 7 o menos
+        for (let i = 1; i <= totalPaginas; i++) {
+          contenedor.appendChild(crearBoton(i, i === CONFIG.paginaActual));
+        }
+      } else {
+        // Mostrar paginación con puntos suspensivos
+        contenedor.appendChild(crearBoton(1, CONFIG.paginaActual === 1));
+
+        if (CONFIG.paginaActual > 3) {
+          contenedor.appendChild(crearPuntos());
+        }
+
+        const inicio = Math.max(2, CONFIG.paginaActual - 1);
+        const fin = Math.min(totalPaginas - 1, CONFIG.paginaActual + 1);
+
+        for (let i = inicio; i <= fin; i++) {
+          contenedor.appendChild(crearBoton(i, i === CONFIG.paginaActual));
+        }
+
+        if (CONFIG.paginaActual < totalPaginas - 2) {
+          contenedor.appendChild(crearPuntos());
+        }
+
+        contenedor.appendChild(crearBoton(totalPaginas, CONFIG.paginaActual === totalPaginas));
+      }
+
+      // Botón siguiente
+      if (CONFIG.paginaActual < totalPaginas) {
+        const btnNext = document.createElement("button");
+        btnNext.textContent = "›";
+        btnNext.className = "btn btn-sm btn-outline-light";
+        btnNext.onclick = () => {
+          CONFIG.paginaActual++;
+          actualizarTabla(datosGlobales);
+        };
+        contenedor.appendChild(btnNext);
       }
     }
 
-    async function drawChart(filtros = {}) {
-      const res = await fetch(API.estadisticas, {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(filtros)
-      });
-      const data = await res.json();
+    // ========================================
+    // GRÁFICOS
+    // ========================================
+    google.charts.load('current', { 
+      packages: ['corechart', 'bar', 'line', 'scatter']
+    });
+    google.charts.setOnLoadCallback(() => {
+      cargarFiltros();
+      aplicarFiltros();
+    });
 
-      const chartData = [['Tipo de delito', 'Cantidad']];
-      data.forEach(obj => chartData.push([obj.codigo_delito_snic_nombre, obj.cantidad]));
+    function drawAllCharts(filtros, datos) {
+      drawChartDelitosTipo(datos);
+      drawChartTop10(datos);
+      drawChartGenero(datos);
+      drawChartProvincias(datos);
+      drawChartTemporal(datos);
+      drawChartScatter(datos);
+      drawChartArea(datos);
+    }
+
+    // 1. Gráfico de Delitos por Tipo (Columnas)
+    function drawChartDelitosTipo(datos) {
+      const delitosAgrupados = {};
+      datos.forEach(d => {
+        const delito = d.codigo_delito_snic_nombre;
+        delitosAgrupados[delito] = (delitosAgrupados[delito] || 0) + (d.cantidad_hechos || 0);
+      });
+
+      const chartData = [['Tipo de Delito', 'Cantidad']];
+      Object.entries(delitosAgrupados)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([delito, cantidad]) => {
+          chartData.push([delito, cantidad]);
+        });
 
       const dataTable = google.visualization.arrayToDataTable(chartData);
       const options = {
-        title: 'Delitos por tipo',
-        width: '100%',
-        height: 400,
-        backgroundColor: '#111425',
-        legend: { textStyle: { color: '#fff' } },
-        titleTextStyle: { color: '#fff' },
-        hAxis: { textStyle: { color: '#fff' }, titleTextStyle: { color: '#fff' } },
-        vAxis: { textStyle: { color: '#fff' }, titleTextStyle: { color: '#fff' } }
+        chartArea: { width: '75%', height: '75%' },
+        colors: ['#667eea'],
+        legend: { position: 'none' },
+        hAxis: { slantedText: true, slantedTextAngle: 45 }
       };
 
-      const chart = new google.visualization.ColumnChart(document.getElementById('grafico'));
+      const chart = new google.visualization.ColumnChart(document.getElementById('chartDelitosTipo'));
       chart.draw(dataTable, options);
     }
 
-    window.onload = cargarFiltros;
-    google.charts.load('current', { packages: ['corechart'] });
-    google.charts.setOnLoadCallback(() => drawChart());
+    // 2. Top 10 Delitos (Barras Horizontales)
+    function drawChartTop10(datos) {
+      const delitosAgrupados = {};
+      datos.forEach(d => {
+        const delito = d.codigo_delito_snic_nombre;
+        delitosAgrupados[delito] = (delitosAgrupados[delito] || 0) + (d.cantidad_hechos || 0);
+      });
+
+      const chartData = [['Tipo de Delito', 'Cantidad']];
+      Object.entries(delitosAgrupados)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .forEach(([delito, cantidad]) => {
+          chartData.push([delito, cantidad]);
+        });
+
+      const dataTable = google.visualization.arrayToDataTable(chartData);
+      const options = {
+        chartArea: { width: '60%', height: '75%' },
+        colors: ['#f59e0b'],
+        legend: { position: 'none' }
+      };
+
+      const chart = new google.visualization.BarChart(document.getElementById('chartTop10'));
+      chart.draw(dataTable, options);
+    }
+
+    // 3. Víctimas por Género (Pie)
+    function drawChartGenero(datos) {
+      let masc = 0, fem = 0, sd = 0;
+      datos.forEach(d => {
+        masc += d.cantidad_victimas_masc || 0;
+        fem += d.cantidad_victimas_fem || 0;
+        sd += d.cantidad_victimas_sd || 0;
+      });
+
+      const chartData = [
+        ['Género', 'Cantidad'],
+        ['Masculino', masc],
+        ['Femenino', fem],
+        ['Sin Identificar', sd]
+      ];
+
+      const dataTable = google.visualization.arrayToDataTable(chartData);
+      const options = {
+        pieHole: 0.4,
+        colors: ['#3b82f6', '#ec4899', '#8b5cf6'],
+        chartArea: { width: '90%', height: '80%' }
+      };
+
+      const chart = new google.visualization.PieChart(document.getElementById('chartGenero'));
+      chart.draw(dataTable, options);
+    }
+
+    // 4. Delitos por Provincia (Barras)
+    function drawChartProvincias(datos) {
+      const provinciasAgrupadas = {};
+      datos.forEach(d => {
+        const prov = d.provincia_nombre;
+        provinciasAgrupadas[prov] = (provinciasAgrupadas[prov] || 0) + (d.cantidad_hechos || 0);
+      });
+
+      const chartData = [['Provincia', 'Cantidad']];
+      Object.entries(provinciasAgrupadas)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([prov, cantidad]) => {
+          chartData.push([prov, cantidad]);
+        });
+
+      const dataTable = google.visualization.arrayToDataTable(chartData);
+      const options = {
+        chartArea: { width: '70%', height: '75%' },
+        colors: ['#10b981'],
+        legend: { position: 'none' },
+        hAxis: { slantedText: true, slantedTextAngle: 45 }
+      };
+
+      const chart = new google.visualization.ColumnChart(document.getElementById('chartProvincias'));
+      chart.draw(dataTable, options);
+    }
+
+    // 5. Evolución Temporal (Línea)
+    function drawChartTemporal(datos) {
+      const aniosAgrupados = {};
+      datos.forEach(d => {
+        const anio = d.anio;
+        aniosAgrupados[anio] = (aniosAgrupados[anio] || 0) + (d.cantidad_hechos || 0);
+      });
+
+      const chartData = [['Año', 'Cantidad de Hechos']];
+      Object.entries(aniosAgrupados)
+        .sort((a, b) => a[0] - b[0])
+        .forEach(([anio, cantidad]) => {
+          chartData.push([anio.toString(), cantidad]);
+        });
+
+      const dataTable = google.visualization.arrayToDataTable(chartData);
+      const options = {
+        chartArea: { width: '85%', height: '75%' },
+        colors: ['#ef4444'],
+        curveType: 'function',
+        legend: { position: 'bottom' }
+      };
+
+      const chart = new google.visualization.LineChart(document.getElementById('chartTemporal'));
+      chart.draw(dataTable, options);
+    }
+
+    // 6. Relación Hechos vs Víctimas (Scatter)
+    function drawChartScatter(datos) {
+      const chartData = [['Hechos', 'Víctimas']];
+      datos.forEach(d => {
+        if (d.cantidad_hechos && d.cantidad_victimas) {
+          chartData.push([d.cantidad_hechos, d.cantidad_victimas]);
+        }
+      });
+
+      const dataTable = google.visualization.arrayToDataTable(chartData);
+      const options = {
+        chartArea: { width: '80%', height: '75%' },
+        colors: ['#8b5cf6'],
+        legend: { position: 'none' },
+        hAxis: { title: 'Cantidad de Hechos' },
+        vAxis: { title: 'Cantidad de Víctimas' }
+      };
+
+      const chart = new google.visualization.ScatterChart(document.getElementById('chartScatter'));
+      chart.draw(dataTable, options);
+    }
+
+    // 7. Comparativa Provincial (Área)
+    function drawChartArea(datos) {
+      const provinciasAnios = {};
+      
+      datos.forEach(d => {
+        const prov = d.provincia_nombre;
+        const anio = d.anio;
+        if (!provinciasAnios[anio]) provinciasAnios[anio] = {};
+        provinciasAnios[anio][prov] = (provinciasAnios[anio][prov] || 0) + (d.cantidad_hechos || 0);
+      });
+
+      const provincias = [...new Set(datos.map(d => d.provincia_nombre))].slice(0, 5);
+      const chartData = [['Año', ...provincias]];
+
+      Object.entries(provinciasAnios)
+        .sort((a, b) => a[0] - b[0])
+        .forEach(([anio, provData]) => {
+          const row = [anio.toString()];
+          provincias.forEach(prov => {
+            row.push(provData[prov] || 0);
+          });
+          chartData.push(row);
+        });
+
+      const dataTable = google.visualization.arrayToDataTable(chartData);
+      const options = {
+        chartArea: { width: '85%', height: '75%' },
+        isStacked: true,
+        legend: { position: 'bottom' }
+      };
+
+      const chart = new google.visualization.AreaChart(document.getElementById('chartArea'));
+      chart.draw(dataTable, options);
+    }
   </script>
 
 </body>
