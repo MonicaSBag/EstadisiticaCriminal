@@ -43,8 +43,10 @@ def login():
         try:
             user = User.get(User.username == username)
         except User.DoesNotExist:
+            flash('Usuario o contraseña incorrectos.', 'danger')
             return render_template('login.html')
 
+        # Si la contraseña es correcta
         if check_password_hash(user.password_hash, password):
             session['user_id'] = user.id
             session['tipo_user'] = user.tipo_usuario_id
@@ -61,6 +63,7 @@ def login():
             flash('Usuario o contraseña incorrectos.', 'danger')
 
     return render_template('login.html')
+
 
 @app.route('/logout')
 def logout():
