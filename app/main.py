@@ -40,27 +40,35 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
 
+        # 1️⃣ Verificar usuario
         try:
             user = User.get(User.username == username)
         except User.DoesNotExist:
-            return render_template('login.html')
+            flash("❌ El usuario no existe.", "danger")
+            return redirect(url_for('login'))
 
-        if check_password_hash(user.password_hash, password):
-            session['user_id'] = user.id
-            session['tipo_user'] = user.tipo_usuario_id
-            session['provincia_nombre'] = user.provincia_nombre
+        # 2️⃣ Verificar contraseña
+        if not check_password_hash(user.password_hash, password):
+            flash("❌ Contraseña incorrecta.", "danger")
+            return redirect(url_for('login'))
 
-            if user.debe_cambiar_password:
-                return redirect(url_for('cambiar_password_primera_vez'))
+        # 3️⃣ Logueo correcto
+        session['user_id'] = user.id
+        session['tipo_user'] = user.tipo_usuario_id
+        session['provincia_nombre'] = user.provincia_nombre
 
-            if user.tipo_usuario_id == 2:
-                return redirect("/dashboard-private")
-            elif user.tipo_usuario_id == 1:
-                return redirect("/portal_admin")
-        else:
-            flash('Usuario o contraseña incorrectos.', 'danger')
+        # 4️⃣ Obligado a cambiar pass
+        if user.debe_cambiar_password:
+            return redirect(url_for('cambiar_password_primera_vez'))
+
+        # 5️⃣ Redirección por rol
+        if user.tipo_usuario_id == 2:
+            return redirect("/dashboard-private")
+        elif user.tipo_usuario_id == 1:
+            return redirect("/portal_admin")
 
     return render_template('login.html')
+
 
 @app.route('/logout')
 def logout():

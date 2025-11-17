@@ -11,56 +11,66 @@
 
   <style>
     body {
-      background: #1e1e2f;
-      color: #fff;
-    }
-    .header-snic {
-      background: #111425;
-      padding: 40px 0;
-      border-bottom: 4px solid #007bff;
-    }
-    .btn-admin {
-      position: absolute;
-      top: 20px;
-      right: 30px;
-    }
-    .btn-custom {
-      padding: 15px 30px;
-      font-size: 1.1em;
-      border-radius: 10px;
-      font-weight: 600;
-    }
-    .card-dark {
-      background: #2e2e42;
-      color: #fff;
-      border-radius: 12px;
-    }
-    /* Popup */
-    .popup {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.4);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    .popup-content {
-      background: #2e2e42;
-      padding: 20px;
-      border-radius: 10px;
-      width: 320px;
-      text-align: center;
-      color: white;
-      border: 1px solid #444;
-      box-shadow: 0 0 15px rgba(0,0,0,0.5);
-    }
-    .popup-content .form-control {
-      background: #111425;
-      color: white;
-      border: 1px solid #555;
-    }
+  background: #1e1e2f;
+  color: #fff;
+  }
+  .header-snic {
+    background: #111425;
+    padding: 40px 0;
+    border-bottom: 4px solid #007bff;
+  }
+  .btn-admin {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+  }
+  .btn-custom {
+    padding: 15px 30px;
+    font-size: 1.1em;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .card-dark {
+    background: #2e2e42;
+    color: #fff;
+    border-radius: 12px;
+  }
+
+  /* Popup */
+  .popup {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  .popup-content {
+    background: #2e2e42;
+    padding: 20px;
+    border-radius: 10px;
+    width: 320px;
+    text-align: center;
+    color: white;
+    border: 1px solid #444;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+  }
+  .popup-content .form-control {
+    background: #111425;
+    color: white;
+    border: 1px solid #555;
+  }
+
+  /* Placeholder blanco */
+  #usuario::placeholder,
+  #password::placeholder {
+    color: #fff !important;
+    opacity: 1 !important;
+  }  
+      
+    
   </style>
 
 </head>
