@@ -458,6 +458,12 @@
       drawChartScatter(datos);
       drawChartArea(datos);
     }
+    window.addEventListener('resize', () => {
+      drawAllCharts({}, datosGlobales);
+    });
+    window.addEventListener('orientationchange', () => {
+      drawAllCharts({}, datosGlobales);
+    });
 
     // 1. Gráfico de Delitos por Tipo (Columnas)
     function drawChartDelitosTipo(datos) {
