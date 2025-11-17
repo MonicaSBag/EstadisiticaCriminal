@@ -616,7 +616,7 @@ async function aplicarFiltros() {
     const filtros = {
         provincia: document.getElementById("provincia").value,
         anio: document.getElementById("anio").value,
-        delito: document.getElementById("codigo_delito_snic_nombre").value
+        codigo_delito_snic_nombre : document.getElementById("codigo_delito_snic_nombre").value
     };
 
     const res = await fetch("/filtrar", {
