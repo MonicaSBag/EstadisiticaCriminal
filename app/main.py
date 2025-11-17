@@ -40,35 +40,27 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        # 1️⃣ Verificar usuario
         try:
             user = User.get(User.username == username)
         except User.DoesNotExist:
-            flash("❌ El usuario no existe.", "danger")
-            return redirect(url_for('login'))
+            return render_template('login.html')
 
-        # 2️⃣ Verificar contraseña
-        if not check_password_hash(user.password_hash, password):
-            flash("❌ Contraseña incorrecta.", "danger")
-            return redirect(url_for('login'))
+        if check_password_hash(user.password_hash, password):
+            session['user_id'] = user.id
+            session['tipo_user'] = user.tipo_usuario_id
+            session['provincia_nombre'] = user.provincia_nombre
 
-        # 3️⃣ Logueo correcto
-        session['user_id'] = user.id
-        session['tipo_user'] = user.tipo_usuario_id
-        session['provincia_nombre'] = user.provincia_nombre
+            if user.debe_cambiar_password:
+                return redirect(url_for('cambiar_password_primera_vez'))
 
-        # 4️⃣ Obligado a cambiar pass
-        if user.debe_cambiar_password:
-            return redirect(url_for('cambiar_password_primera_vez'))
-
-        # 5️⃣ Redirección por rol
-        if user.tipo_usuario_id == 2:
-            return redirect("/dashboard-private")
-        elif user.tipo_usuario_id == 1:
-            return redirect("/portal_admin")
+            if user.tipo_usuario_id == 2:
+                return redirect("/dashboard-private")
+            elif user.tipo_usuario_id == 1:
+                return redirect("/portal_admin")
+        else:
+            flash('Usuario o contraseña incorrectos.', 'danger')
 
     return render_template('login.html')
-
 
 @app.route('/logout')
 def logout():
@@ -111,14 +103,14 @@ def filtros():
     anio = [fila[0] for fila in cursor.fetchall()]
 
     cursor.execute("SELECT DISTINCT codigo_delito_snic_nombre FROM estadisticasdelitos ORDER BY codigo_delito_snic_nombre")
-    delito = [fila[0] for fila in cursor.fetchall()]
+    codigo_delito_snic_nombre = [fila[0] for fila in cursor.fetchall()]
 
     conn.close()
 
     return jsonify({
         "provincias": provincias,
         "anio": anio,
-        "codigo_delito_snic_nombre": delito,
+        "codigo_delito_snic_nombre": codigo_delito_snic_nombre,
     })
 
 @app.route('/filtros2', methods=["GET"])
@@ -133,14 +125,14 @@ def filtros2():
     anio = [fila[0] for fila in cursor.fetchall()]
 
     cursor.execute("SELECT DISTINCT codigo_delito_snic_nombre FROM estadisticasdelitos ORDER BY codigo_delito_snic_nombre")
-    delito = [fila[0] for fila in cursor.fetchall()]
+    codigo_delito_snic_nombre = [fila[0] for fila in cursor.fetchall()]
 
     conn.close()
 
     return jsonify({
         "provincias": provincias,
         "anio": anio,
-        "codigo_delito_snic_nombre": delito,
+        "codigo_delito_snic_nombre": codigo_delito_snic_nombre,
     })
 
 @app.route('/filtrar', methods=["POST"])
@@ -478,8 +470,8 @@ def abm_agregar():
     data = request.get_json()
     
     campos_requeridos = ['provincia', 'anio', 'delito', 'cantidad_hechos', 
-                         'cantidad_victimas', 'cantidad_victimas_masc', 
-                         'cantidad_victimas_fem', 'cantidad_victimas_sd']
+                        'cantidad_victimas', 'cantidad_victimas_masc', 
+                        'cantidad_victimas_fem', 'cantidad_victimas_sd']
     
     for campo in campos_requeridos:
         if campo not in data or data[campo] == '' or data[campo] is None:
